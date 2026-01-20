@@ -1,6 +1,7 @@
 from email.mime import audio
 import pygame
 from random import choice
+from pygame import event
 
 class AudioCreator:
     def __init__(self):
@@ -77,7 +78,7 @@ class AudioCreator:
         elif octave==2:
             return (self.note_sounds[(note_index+12)%36],(note_index+12)%36)
         else:
-            return (self.note_sounds[(note_index-12)%36],(note_index+12)%36)
+            return (self.note_sounds[(note_index-12)%36],(note_index-12)%36)
 
     def make_1note(self):
         chosen_note=choice(self.note_sounds[12:24])
@@ -147,7 +148,9 @@ class AudioCreator:
 class MakePiano:
     def __init__(self):
         pygame.init()
-        self.display=pygame.display.set_mode((800, 600))
+        self.width=820
+        self.height=600
+        self.display=pygame.display.set_mode((self.width,self.height))
         self.audio=AudioCreator()
         self.white_note_names=["C3","D3","E3","F3","G3","A3","B3",
                                "C4","D4","E4","F4","G4","A4","B4",
@@ -156,20 +159,34 @@ class MakePiano:
                                "C#4","D#4","F#4","G#4","A#4",
                                "C#5","D#5","F#5","G#5","A#5"]
         self.my_answer=[]
+        self.clicked_keys={}
+        self.showing_correct=False
 
+    
     def draw_piano(self):
         self.white_keys=[]
-        for i in range(27):
-            rect=pygame.draw.rect(self.display,'white',[i*50,550,50,250],0,2)
+        for i in range(21):
+            note_name=self.white_note_names[i]
+            if note_name in self.clicked_keys:
+                color=self.clicked_keys[note_name]
+            else:
+                color='white'
+            rect=pygame.draw.rect(self.display,color,[i*39,self.height-300,39,300],0,2)
+            pygame.draw.rect(self.display,'black',[i*39,self.height-300,39,300],2,2)
             self.white_keys.append(rect)
-            pygame.draw.rect(self.display,'black',[i*50,550,50,250],2,2)
 
         skip_count=0
         last_skip=3
         skip_track=0
         self.black_keys=[]
+
         for i in range(15):
-            rect=pygame.draw.rect(self.display,'black',[27+i*50+skip_count*50,550,50,150],0,2)
+            note_name=self.black_note_names[i]
+            if note_name in self.clicked_keys:
+                color=self.clicked_keys[note_name]
+            else:
+                color='black'
+            rect=pygame.draw.rect(self.display,color,[25+i*39+skip_count*39,self.height-300,27,165],0,2)
             self.black_keys.append(rect)
             skip_track+=1
             if last_skip==2 and skip_track==3:
@@ -188,54 +205,57 @@ class MakePiano:
         for i,rect in enumerate(self.white_keys):
             if rect.collidepoint(mouse_pos):
                 return "white",i,rect
-        return None,None
+        return None,None,None
     
     def draw_my_answer(self,event):
-        print("draw_my_answer called!", event)
         if event.type==pygame.MOUSEBUTTONDOWN:
             key_type,key_index,rect=self.choose_keys(event.pos)
-        
+
+            if key_type is None:
+                return
+            
             if key_type=="black":
                 note=self.black_note_names[key_index]
-                if note in self.my_answer:
-                    self.my_answer.remove(note)
-                    pygame.draw.rect(self.display, 'black', self.black_keys[key_index],0,2)
+                if note in self.clicked_keys:
+                    del self.clicked_keys[note]
+                    if note in self.my_answer:
+                        self.my_answer.remove(note)
                 else:
+                    self.clicked_keys[note]='blue'
                     self.audio.black_sounds[key_index].play()
-                    pygame.draw.rect(self.display,'blue',self.black_keys[key_index],0,2)
-                    self.my_answer.append(self.black_note_names[key_index])
+                    self.my_answer.append(note)
 
             elif key_type=="white":
                 note=self.white_note_names[key_index]
-                if note in self.my_answer:
-                    self.my_answer.remove(note)
-                    pygame.draw.rect(self.display, 'white', self.white_keys[key_index],0,2)
+                if note in self.clicked_keys:
+                    del self.clicked_keys[note]
+                    if note in self.my_answer:
+                        self.my_answer.remove(note)
                 else:
+                    self.clicked_keys[note]='blue'
                     self.audio.white_sounds[key_index].play()
-                    pygame.draw.rect(self.display,'blue',self.white_keys[key_index],0,2)
-                    self.my_answer.append(self.white_note_names[key_index])
+                    self.my_answer.append(note)
 
     def draw_correct_answer(self):
+        self.showing_correct=True
         for item in self.audio.correct_answer:
             if item in self.my_answer:
+                self.clicked_keys[item]='green'
                 if "#" in item:
                     key_index=self.black_note_names.index(item)
                     self.audio.black_sounds[key_index].play()
-                    pygame.draw.rect(self.display,'green',self.black_keys[key_index],0,2)
-                else:
-                    key_indexint=self.white_note_names.index(item)
-                    self.audio.white_sounds[key_index].play()
-                    pygame.draw.rect(self.display,'green',self.white_keys[key_index],0,2)
-            
-            elif item not in self.my_answer:
-                if "#" in item:
-                    key_index=self.black_note_names.index(item)
-                    self.audio.black_sounds[key_index].play()
-                    pygame.draw.rect(self.display,'red',self.black_keys[key_index],0,2)
                 else:
                     key_index=self.white_note_names.index(item)
                     self.audio.white_sounds[key_index].play()
-                    pygame.draw.rect(self.display,'red',self.white_keys[key_index],0,2)
+            
+            elif item not in self.my_answer:
+                self.clicked_keys[item]='red'
+                if "#" in item:
+                    key_index=self.black_note_names.index(item)
+                    self.audio.black_sounds[key_index].play()
+                else:
+                    key_index=self.white_note_names.index(item)
+                    self.audio.white_sounds[key_index].play()
         
 class Game:
     def __init__(self):
@@ -247,13 +267,14 @@ class Game:
         self.right_points=0
         self.false_points=0
 
-    
     def main_loop(self):
         running=True
         while running:
             self.piano.display.fill((200,200,200))
             self.piano.draw_piano()
-
+            self.show_right_score()
+            self.show_false_score()
+            
             for event in pygame.event.get():
                 if event.type==pygame.QUIT:
                     running=False
@@ -265,21 +286,35 @@ class Game:
                     if event.key==pygame.K_1:
                         self.audio.make_1note()
                         self.piano.my_answer.clear()
+                        self.piano.clicked_keys.clear()
+                        self.piano.showing_correct=False
                     elif event.key==pygame.K_2:
                         self.audio.make_2notes()
                         self.piano.my_answer.clear()
+                        self.piano.clicked_keys.clear()
+                        self.piano.showing_correct=False
                     elif event.key==pygame.K_3:
                         self.audio.make_3notes()
                         self.piano.my_answer.clear()
+                        self.piano.clicked_keys.clear()
+                        self.piano.showing_correct=False
                     elif event.key==pygame.K_4:
                         self.audio.make_4notes()
                         self.piano.my_answer.clear()
+                        self.piano.clicked_keys.clear() 
+                        self.piano.showing_correct=False
 
-                    elif event.key==pygame.K_KP_ENTER:
+                    elif event.key==pygame.K_5:
                         self.check_answer()
 
                     elif event.key==pygame.K_SPACE:
                         self.audio.replay_correct_answer()
+
+                    elif event.key==pygame.K_c:  
+                        self.piano.my_answer.clear()
+                        self.piano.clicked_keys.clear()
+                        self.piano.showing_correct=False
+
 
             pygame.display.flip()
 
@@ -287,8 +322,13 @@ class Game:
     def check_answer(self):
         if set(self.piano.my_answer)==set(self.audio.correct_answer):
             self.answer_right()
+            for note in self.piano.my_answer:
+                self.piano.clicked_keys[note]='green'
+            self.piano.showing_correct=True
         else:
             self.answer_false()
+            self.showing_correct_answer=True
+            self.piano.draw_correct_answer()
 
     def answer_right(self):
         self.audio.right_answer_sound.play()
@@ -296,7 +336,7 @@ class Game:
 
     def answer_false(self):
         self.audio.false_answer_sound.play()
-        self.wrong_points+=1
+        self.false_points+=1
 
     def show_right_score(self):
         font=pygame.font.SysFont("Impact",30)
@@ -319,7 +359,5 @@ if __name__=="__main__":
     game.main_loop()
 
     
-
-
 
 
