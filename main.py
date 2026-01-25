@@ -236,26 +236,6 @@ class MakePiano:
                     self.audio.white_sounds[key_index].play()
                     self.my_answer.append(note)
 
-    def draw_correct_answer(self):
-        self.showing_correct=True
-        for item in self.audio.correct_answer:
-            if item in self.my_answer:
-                self.clicked_keys[item]='green'
-                if "#" in item:
-                    key_index=self.black_note_names.index(item)
-                    self.audio.black_sounds[key_index].play()
-                else:
-                    key_index=self.white_note_names.index(item)
-                    self.audio.white_sounds[key_index].play()
-            
-            elif item not in self.my_answer:
-                self.clicked_keys[item]='red'
-                if "#" in item:
-                    key_index=self.black_note_names.index(item)
-                    self.audio.black_sounds[key_index].play()
-                else:
-                    key_index=self.white_note_names.index(item)
-                    self.audio.white_sounds[key_index].play()
         
 class Game:
     def __init__(self):
@@ -266,6 +246,11 @@ class Game:
 
         self.right_points=0
         self.false_points=0
+
+        self.current_mode=1   
+        self.running=True
+
+        self.show_rules()
 
     def main_loop(self):
         running=True
@@ -284,37 +269,31 @@ class Game:
 
                 if event.type==pygame.KEYDOWN:
                     if event.key==pygame.K_1:
+                        self.current_mode=1
                         self.audio.make_1note()
                         self.piano.my_answer.clear()
                         self.piano.clicked_keys.clear()
-                        self.piano.showing_correct=False
                     elif event.key==pygame.K_2:
+                        self.current_mode=2
                         self.audio.make_2notes()
                         self.piano.my_answer.clear()
                         self.piano.clicked_keys.clear()
-                        self.piano.showing_correct=False
                     elif event.key==pygame.K_3:
+                        self.current_mode=3
                         self.audio.make_3notes()
                         self.piano.my_answer.clear()
                         self.piano.clicked_keys.clear()
-                        self.piano.showing_correct=False
                     elif event.key==pygame.K_4:
+                        self.current_mode=4
                         self.audio.make_4notes()
                         self.piano.my_answer.clear()
                         self.piano.clicked_keys.clear() 
-                        self.piano.showing_correct=False
 
-                    elif event.key==pygame.K_5:
+                    elif event.key==pygame.K_RETURN:
                         self.check_answer()
 
                     elif event.key==pygame.K_SPACE:
                         self.audio.replay_correct_answer()
-
-                    elif event.key==pygame.K_c:  
-                        self.piano.my_answer.clear()
-                        self.piano.clicked_keys.clear()
-                        self.piano.showing_correct=False
-
 
             pygame.display.flip()
 
@@ -324,40 +303,99 @@ class Game:
             self.answer_right()
             for note in self.piano.my_answer:
                 self.piano.clicked_keys[note]='green'
-            self.piano.showing_correct=True
         else:
             self.answer_false()
-            self.showing_correct_answer=True
-            self.piano.draw_correct_answer()
+        self.check_game_end()
+
+    def check_game_end(self):
+        if self.right_points>=50:
+            self.game_over("YOU WIN!",(0,200,0))
+        elif self.false_points>=50:
+            self.game_over("YOU LOSE !",(200,0,0))
 
     def answer_right(self):
         self.audio.right_answer_sound.play()
-        self.right_points+=1
+        self.right_points+=self.current_mode
 
     def answer_false(self):
         self.audio.false_answer_sound.play()
-        self.false_points+=1
+        self.false_points+=(5-self.current_mode)
 
     def show_right_score(self):
         font=pygame.font.SysFont("Impact",30)
-        text=font.render(f"Points:{self.right_points}",True,(255,0,0))
+        text=font.render(f"Points: {self.right_points}",True,(0,0,255))
         self.piano.display.blit(text, (465, 10))
 
     def show_false_score(self):
         font=pygame.font.SysFont("Impact",30)
-        text=font.render(f"Mistakes:{self.false_points}",True,(255,0,0))
-        self.piano.display.blit(text, (20, 10))
+        text=font.render(f"Mistakes: {self.false_points}",True,(255,0,0))
+        self.piano.display.blit(text, (20,10))
 
     def show_rules(self):
-        pass
+        font_title=pygame.font.SysFont("Impact",50)
+        font_rules=pygame.font.SysFont("Comic Sans MS",22)
 
-    def game_over(self):
-        pass
+        self.piano.display.fill((30,30,30))
+
+        title=font_title.render("EAR TRAINING",True,(255,200,0))
+        self.piano.display.blit(title,(240,40))
+
+        rules=[
+            "Rules:",
+            "- Press 1 : play 1 note",
+            "- Press 2 : play 2 notes",
+            "- Press 3 : play 3 notes",
+            "- Press 4 : play 4 notes",
+            "",
+            "- Click the piano keys to answer",
+            "- Press ENTER to check your answer",
+            "- Press SPACE to replay the sound",
+            "",
+            "Scoring:",
+            "- Correct: +1 / +2 / +3 / +4 points",
+            "- Wrong:   +4 / +3 / +2 / +1 mistake points",
+            "",
+            "- Reach 50 points → YOU WIN",
+            "- Reach 50 mistakes → YOU LOSE",
+            "",
+            "Press ENTER to start"
+        ]
+
+        for i, line in enumerate(rules):
+            text=font_rules.render(line,True,(220,220,220))
+            self.piano.display.blit(text,(100,120+i*26))
+
+        pygame.display.flip()
+
+        waiting=True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type==pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type==pygame.KEYDOWN:
+                    if event.key==pygame.K_RETURN:
+                        waiting=False
+
+
+    def game_over(self,message,color):
+        font=pygame.font.SysFont("Impact",70)
+        text=font.render(message,True,color)
+
+        self.piano.display.fill((0,0,0))
+        self.piano.display.blit(text,(220,260))
+        pygame.display.flip()
+
+        pygame.time.wait(3000)
+        pygame.quit()
+        exit()
+
 
 if __name__=="__main__":
     game=Game()
     game.main_loop()
 
+    
     
 
 
