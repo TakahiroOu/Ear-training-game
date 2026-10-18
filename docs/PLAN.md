@@ -85,7 +85,8 @@ The existing `sounds/` folder becomes `frontend/public/sounds/` after conversion
 - Write `docker-compose.yml` with 2 services: `frontend` (port 5173) and `backend` (port 8000). There's no database yet, because Phase 1 doesn't need one.
 - ✅ Done when `docker compose up` shows the React start page and `localhost:8000/docs` shows FastAPI.
 
-### Phase 1 — Your current game, in the browser
+### Phase 1 — Your current game, in the browser ✅ finished
+Also fixed from the pygame version: ENTER before any question gave free points, and pressing ENTER again after a correct answer scored the same question again.
 - **Backend** `music.py`: port `AudioCreator`'s logic without pygame, working with note *names/indices* only:
   - `NOTE_NAMES` (C3…B5), `make_octave(index)`, `make_1note()`, `make_2notes()` (keeps your "not adjacent" rule), `make_3notes()` (major/minor triad), `make_4notes()` (dom7/min7).
   - Route `GET /api/questions?mode=3` → `{"notes": ["E3","G#4","B4"]}`.

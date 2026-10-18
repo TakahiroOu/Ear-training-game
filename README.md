@@ -17,10 +17,23 @@ docker compose up --build
 
 Stop it with `Ctrl+C`, or `docker compose down` if it runs in the background.
 
-Run the backend tests:
+After adding a new library (`npm install ...` or a new line in `requirements.txt`), rebuild with:
 
 ```
-docker compose exec backend pytest
+docker compose up --build -V
+```
+
+(`-V` makes Docker reinstall the libraries instead of reusing the old ones.)
+
+To play on your phone: connect it to the same Wi‑Fi, find your PC's IP address with `ipconfig`
+(the "IPv4 Address", e.g. 192.168.1.20), and open `http://192.168.1.20:5173`.
+If it doesn't load, allow Docker / port 5173 in the Windows Firewall.
+
+## Tests
+
+```
+docker compose exec backend pytest     # Python: music logic + API
+cd frontend && npm test                # JavaScript: game rules
 ```
 
 ## Project layout
