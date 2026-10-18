@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { useAuth } from './auth/useAuth.js'
-import AccountPage from './components/AccountPage.jsx'
 import GameOver from './components/GameOver.jsx'
 import KeySelector from './components/KeySelector.jsx'
 import ModeSelector from './components/ModeSelector.jsx'
 import Piano from './components/Piano.jsx'
 import RulesScreen from './components/RulesScreen.jsx'
 import ScoreBoard from './components/ScoreBoard.jsx'
-import StatsPage from './components/StatsPage.jsx'
-import ContestsPage from './contests/ContestsPage.jsx'
-import FriendsPage from './friends/FriendsPage.jsx'
-import TrainerPage from './trainer/TrainerPage.jsx'
 import { spellNote } from './game/keys.js'
 import { useGame } from './game/useGame.js'
 import { LANGUAGES, useLanguage } from './i18n/index.js'
+
+// Pages other than Play are downloaded only when first opened, so the site starts faster
+const AccountPage = lazy(() => import('./components/AccountPage.jsx'))
+const StatsPage = lazy(() => import('./components/StatsPage.jsx'))
+const ContestsPage = lazy(() => import('./contests/ContestsPage.jsx'))
+const FriendsPage = lazy(() => import('./friends/FriendsPage.jsx'))
+const TrainerPage = lazy(() => import('./trainer/TrainerPage.jsx'))
 
 function App() {
   const auth = useAuth()
@@ -82,11 +84,13 @@ function App() {
         </nav>
       </header>
 
-      {page === 'account' && <AccountPage t={t} auth={auth} onLoggedIn={() => setPage('play')} />}
-      {page === 'stats' && auth.token && <StatsPage t={t} token={auth.token} />}
-      {page === 'trainer' && <TrainerPage t={t} auth={auth} />}
-      {page === 'contests' && <ContestsPage t={t} auth={auth} />}
-      {page === 'friends' && <FriendsPage t={t} auth={auth} />}
+      <Suspense fallback={<section className="panel muted">…</section>}>
+        {page === 'account' && <AccountPage t={t} auth={auth} onLoggedIn={() => setPage('play')} />}
+        {page === 'stats' && auth.token && <StatsPage t={t} token={auth.token} />}
+        {page === 'trainer' && <TrainerPage t={t} auth={auth} />}
+        {page === 'contests' && <ContestsPage t={t} auth={auth} />}
+        {page === 'friends' && <FriendsPage t={t} auth={auth} />}
+      </Suspense>
 
       {page === 'play' && game.screen === 'rules' && (
         <RulesScreen t={t} loading={game.loading} error={game.error} onStart={game.start} />

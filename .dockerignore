@@ -1,0 +1,9 @@
+# Used when building from the project folder (backend/Dockerfile.prod): only backend/ and sounds/ are needed
+.git
+.env
+frontend
+legacy
+docs
+sounds2
+**/__pycache__
+**/.pytest_cache

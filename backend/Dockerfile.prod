@@ -1,0 +1,18 @@
+# Production image of the Python API (used by Render).
+# Built from the project folder (not backend/) so the piano samples in sounds/ can be included:
+#   docker build -f backend/Dockerfile.prod -t ear-training-api .
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/ .
+# Competitions mix their audio from the original WAV samples
+COPY sounds/*.wav /sounds/
+ENV SOUNDS_DIR=/sounds
+
+# 1. Bring the database up to date (Alembic migrations), 2. start the API.
+# No --reload (that's for development). One process only: live rooms are kept in its memory.
+# Render tells the app which port to use in $PORT.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
