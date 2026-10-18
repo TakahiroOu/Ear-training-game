@@ -43,9 +43,124 @@ h1 {
   letter-spacing: 0.05em;
 }
 
-.language-switch {
+.nav {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.nav-divider {
+  width: 1px;
+  height: 1.2em;
+  background: #555;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+/* ---------- account form ---------- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form input {
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #1e1e1e;
+  color: var(--text);
+}
+
+.message-info {
+  color: var(--accent);
+}
+
+/* ---------- stats ---------- */
+.stats h3 {
+  margin: 20px 0 8px;
+  font-size: 1rem;
+}
+
+.stat-tiles {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-tile {
+  flex: 1 1 90px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 4.5em 1fr 8em;
+  align-items: center;
   gap: 8px;
+  margin-bottom: 6px;
+}
+
+.bar {
+  height: 12px;
+  background: #1e1e1e;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--blue);
+}
+
+.bar-value {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.chip {
+  display: inline-block;
+  background: #1e1e1e;
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin: 0 6px 6px 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table td {
+  padding: 6px 4px;
+  border-top: 1px solid #3a3a3a;
 }
 
 .link {

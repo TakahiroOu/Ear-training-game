@@ -1,19 +1,24 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from './auth/useAuth.js'
+import AccountPage from './components/AccountPage.jsx'
 import GameOver from './components/GameOver.jsx'
 import ModeSelector from './components/ModeSelector.jsx'
 import Piano from './components/Piano.jsx'
 import RulesScreen from './components/RulesScreen.jsx'
 import ScoreBoard from './components/ScoreBoard.jsx'
+import StatsPage from './components/StatsPage.jsx'
 import { useGame } from './game/useGame.js'
 import { LANGUAGES, useLanguage } from './i18n/index.js'
 
 function App() {
-  const game = useGame()
+  const auth = useAuth()
+  const game = useGame({ token: auth.token, userId: auth.user?.id ?? null })
   const { t, language, setLanguage } = useLanguage()
+  const [page, setPage] = useState('play') // 'play' | 'stats' | 'account'
 
   // Keyboard shortcuts, same as the pygame version: 1-4, Enter, Space.
   useEffect(() => {
-    if (game.screen !== 'playing') return
+    if (page !== 'play' || game.screen !== 'playing') return
 
     function onKeyDown(event) {
       if (['1', '2', '3', '4'].includes(event.key)) {
@@ -29,13 +34,27 @@ function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [game])
+  }, [game, page])
+
+  const navButton = (target, label) => (
+    <button
+      type="button"
+      className={page === target ? 'link link-active' : 'link'}
+      onClick={() => setPage(target)}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <main className="app">
       <header className="header">
         <h1>{t.title}</h1>
-        <div className="language-switch">
+        <nav className="nav">
+          {navButton('play', t.play)}
+          {auth.user && navButton('stats', t.stats)}
+          {auth.enabled && navButton('account', auth.user ? t.account : t.logIn)}
+          <span className="nav-divider" />
           {Object.entries(LANGUAGES).map(([code, texts]) => (
             <button
               key={code}
@@ -46,12 +65,17 @@ function App() {
               {texts.languageName}
             </button>
           ))}
-        </div>
+        </nav>
       </header>
 
-      {game.screen === 'rules' && <RulesScreen t={t} loading={game.loading} error={game.error} onStart={game.start} />}
+      {page === 'account' && <AccountPage t={t} auth={auth} onLoggedIn={() => setPage('play')} />}
+      {page === 'stats' && auth.token && <StatsPage t={t} token={auth.token} />}
 
-      {game.screen === 'playing' && (
+      {page === 'play' && game.screen === 'rules' && (
+        <RulesScreen t={t} loading={game.loading} error={game.error} onStart={game.start} />
+      )}
+
+      {page === 'play' && game.screen === 'playing' && (
         <>
           <ScoreBoard t={t} points={game.points} mistakes={game.mistakes} />
           <ModeSelector t={t} currentMode={game.mode} onChoose={game.newQuestion} />
@@ -88,10 +112,13 @@ function App() {
             result={game.result}
             onPress={game.pressKey}
           />
+
+          {game.saveFailed && <p className="message message-error">{t.saveFailed}</p>}
+          {auth.enabled && !auth.user && <p className="muted small">{t.guestNote}</p>}
         </>
       )}
 
-      {(game.screen === 'won' || game.screen === 'lost') && (
+      {page === 'play' && (game.screen === 'won' || game.screen === 'lost') && (
         <GameOver
           t={t}
           won={game.screen === 'won'}
