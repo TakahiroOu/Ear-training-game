@@ -103,9 +103,18 @@ export function roomSocketUrl(code) {
   return `${base.origin}/api/rooms/${encodeURIComponent(code)}/ws`
 }
 
-/** Start (or continue) your one attempt. */
-export function enterCompetition(token, competitionId) {
-  return request(`/api/competitions/${competitionId}/entries`, { token, method: 'POST' })
+/** Ranked: start a run with `questionCount` questions (or continue an unfinished one). Class: your one attempt. */
+export function enterCompetition(token, competitionId, questionCount = 20) {
+  return request(`/api/competitions/${competitionId}/entries`, {
+    token,
+    method: 'POST',
+    body: { question_count: questionCount },
+  })
+}
+
+/** Creator only: close a class competition (its leaderboard stays visible). */
+export function closeCompetition(token, competitionId) {
+  return request(`/api/competitions/${competitionId}/close`, { token, method: 'POST' })
 }
 
 /** The current question as audio (the server never sends its note names before you answer). */

@@ -677,3 +677,28 @@ kbd {
   background: var(--yellow);
   color: #222;
 }
+
+/* ranked: how many questions */
+.count-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.count-picker .button {
+  min-height: 36px;
+  padding: 4px 12px;
+}
+
+.count-picker input {
+  width: 5em;
+  font-size: 1rem;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #1e1e1e;
+  color: var(--text);
+}

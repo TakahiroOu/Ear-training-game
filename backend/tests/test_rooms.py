@@ -62,10 +62,10 @@ def test_first_right_answer_scores_and_ends_the_question():
     assert question["mode"] == 1 and len(question["audio"]) > 1000
     assert "notes" not in str(room.snapshot())  # the answer is never in what browsers see before the reveal
 
-    messages = room.answer(guest, 1, room.notes, now=101.0)  # 1 second: full speed bonus
-    assert messages[0] == {"type": "correct", "player": guest, "rank": 1, "points": 150}
+    messages = room.answer(guest, 1, room.notes, now=101.0)  # after 1 second
+    assert messages[0] == {"type": "correct", "player": guest, "rank": 1, "points": 113}
     assert "reveal" in types(messages)  # 2 players: only one can score, so the question ends
-    assert room.players[guest].score == 150
+    assert room.players[guest].score == 113
 
 
 def test_wrong_answer_costs_points_and_locks_you_out():
@@ -95,9 +95,9 @@ def test_with_four_players_two_score_and_the_second_gets_less():
     room = make_room(players=4)
     host, p1, p2, p3 = ids(room)
     room.start(host, now=0.0)
-    first = room.answer(p1, 1, room.notes, now=1.0)
+    first = room.answer(p1, 1, room.notes, now=0.0)
     assert first[0]["points"] == 150 and "reveal" not in types(first)
-    second = room.answer(p2, 1, room.notes, now=2.0)
+    second = room.answer(p2, 1, room.notes, now=0.0)
     assert second[0] == {"type": "correct", "player": p2, "rank": 2, "points": 90}  # 150 × 0.6
     assert "reveal" in types(second)
     with pytest.raises(RoomError, match="not_now"):  # too late: the question is over
@@ -118,8 +118,8 @@ def test_game_ends_at_the_target_score():
     host, guest = ids(room)
     room.start(host, now=0.0)
     now = 0.0
-    for _ in range(4):  # 150 points per question: 4 × 150 = 600
-        messages = room.answer(guest, room.round, room.notes, now=now + 1)
+    for _ in range(4):  # answering instantly: 150 points per question, 4 × 150 = 600
+        messages = room.answer(guest, room.round, room.notes, now=now)
         now += 10
         room.tick(now)
     finished = next(m for m in messages if m["type"] == "finished")

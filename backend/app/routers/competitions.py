@@ -1,14 +1,14 @@
-"""Ranked runs (anytime, Easy / Mixed) and class competitions with a join code.
+"""Ranked runs (anytime, Easy / Mixed, any length) and class competitions with a join code.
 
 Cheating protection: the browser never receives a question's note names before answering.
 It gets a mixed audio clip (app/audio.py), the server times the answer and grades it.
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -17,6 +17,10 @@ from sqlalchemy.orm import Session
 from app import audio
 from app.auth import CurrentUser, get_current_user, get_optional_user
 from app.competitions import (
+    ALWAYS_OPEN,
+    AVERAGE,
+    AVERAGE_MS,
+    MIN_RANKED_QUESTIONS,
     best_entries,
     best_rank,
     ensure_ranked_competitions,
@@ -37,6 +41,7 @@ from app.scoring import classify
 
 router = APIRouter(prefix="/api", tags=["competitions"])
 LEADERBOARD_SIZE = 50
+MAX_QUESTIONS = 100
 Category = Literal["easy", "mixed"]
 Period = Literal["all", "week"]
 
@@ -53,14 +58,14 @@ class EntryOut(BaseModel):
     correct: int
     total_ms: int
     finished: bool
-    rank: int | None
+    rank: int | None  # None while playing, or (ranked) when the run is too short to count
 
 
 class BestOut(BaseModel):
     score: int
-    correct: int
-    total_ms: int
-    rank: int
+    question_count: int
+    average: float  # points per question (what ranked leaderboards compare)
+    rank: int | None
 
 
 class CompetitionOut(BaseModel):
@@ -69,20 +74,23 @@ class CompetitionOut(BaseModel):
     category: str  # "easy" | "mixed"
     title: str | None
     question_count: int
-    starts_at: datetime
-    ends_at: datetime
-    active: bool
+    active: bool  # class: False once the creator closed it
     players: int
+    is_mine: bool  # you created it (you can close it)
     join_code: str | None  # only shown to the person who created it
     my_entry: EntryOut | None  # a run in progress (ranked) or your attempt (class)
     my_best: BestOut | None  # your best finished run and its rank
+    min_ranked_questions: int
 
 
 class ClassCompetitionIn(BaseModel):
     title: str = Field(min_length=1, max_length=60)
     category: Category = "mixed"
-    question_count: int = Field(default=20, ge=4, le=40)
-    days: int = Field(default=7, ge=1, le=30)
+    question_count: int = Field(default=20, ge=1, le=MAX_QUESTIONS)
+
+
+class EnterIn(BaseModel):
+    question_count: int = Field(default=20, ge=1, le=MAX_QUESTIONS)  # ranked only
 
 
 class CompetitionAnswerIn(BaseModel):
@@ -102,6 +110,8 @@ class LeaderboardRow(BaseModel):
     rank: int
     name: str
     score: int
+    question_count: int
+    average: float
     correct: int
     total_ms: int
     is_me: bool
@@ -128,16 +138,17 @@ def entry_rank(db: Session, entry: CompetitionEntry):
     return best_rank(db, entry) if entry.competition.kind == "ranked" else rank_of(db, entry)
 
 
+def current_question(entry: CompetitionEntry):
+    return question(entry.seed, entry.next_index, entry.question_count, entry.competition.category)
+
+
 def entry_out(db: Session, entry: CompetitionEntry):
-    competition = entry.competition
     finished = entry.finished_at is not None
-    next_mode = None
-    if not finished:
-        next_mode = question(entry.seed, entry.next_index, competition.question_count, competition.category)[0]
     return EntryOut(
-        id=entry.id, competition_id=entry.competition_id, question_count=competition.question_count,
-        next_index=entry.next_index, next_mode=next_mode, score=entry.score, correct=entry.correct,
-        total_ms=entry.total_ms, finished=finished, rank=entry_rank(db, entry),
+        id=entry.id, competition_id=entry.competition_id, question_count=entry.question_count,
+        next_index=entry.next_index, next_mode=None if finished else current_question(entry)[0],
+        score=entry.score, correct=entry.correct, total_ms=entry.total_ms, finished=finished,
+        rank=entry_rank(db, entry),
     )
 
 
@@ -147,33 +158,41 @@ def my_entries(competition_id, user_id):
     )
 
 
-def competition_out(db: Session, competition: Competition, user: CurrentUser | None, now):
-    players = db.scalar(
-        select(func.count(func.distinct(CompetitionEntry.user_id))).where(
-            CompetitionEntry.competition_id == competition.id, CompetitionEntry.finished_at.is_not(None)
-        )
+def best_out(db: Session, entry):
+    return BestOut(
+        score=entry.score, question_count=entry.question_count,
+        average=round(entry.score / entry.question_count, 1), rank=entry_rank(db, entry),
     )
+
+
+def competition_out(db: Session, competition: Competition, user: CurrentUser | None, now):
+    ranked = competition.kind == "ranked"
+    finished = (CompetitionEntry.competition_id == competition.id) & CompetitionEntry.finished_at.is_not(None)
+    if ranked:
+        finished &= CompetitionEntry.question_count >= MIN_RANKED_QUESTIONS
+    players = db.scalar(select(func.count(func.distinct(CompetitionEntry.user_id))).where(finished))
+
     open_entry = best = None
     if user:
         open_entry = db.scalar(my_entries(competition.id, user.id).where(CompetitionEntry.finished_at.is_(None)))
-        best_entry = db.scalar(
-            my_entries(competition.id, user.id)
-            .where(CompetitionEntry.finished_at.is_not(None))
-            .order_by(CompetitionEntry.score.desc(), CompetitionEntry.total_ms)
-        )
-        if best_entry:
-            best = BestOut(
-                score=best_entry.score, correct=best_entry.correct, total_ms=best_entry.total_ms,
-                rank=entry_rank(db, best_entry),
+        done = my_entries(competition.id, user.id).where(CompetitionEntry.finished_at.is_not(None))
+        if ranked:
+            per_question = CompetitionEntry.question_count
+            done = done.where(per_question >= MIN_RANKED_QUESTIONS).order_by(
+                (CompetitionEntry.score * 1.0 / per_question).desc(), CompetitionEntry.total_ms * 1.0 / per_question
             )
-        if competition.kind == "class" and open_entry is None and best_entry is not None:
-            open_entry = best_entry  # class: your one attempt
+        best_entry = db.scalar(done)
+        if best_entry:
+            best = best_out(db, best_entry)
+            if not ranked and open_entry is None:
+                open_entry = best_entry  # class: your one attempt
+    mine = bool(user and competition.created_by == user.id)
     return CompetitionOut(
         id=competition.id, kind=competition.kind, category=competition.category, title=competition.title,
-        question_count=competition.question_count, starts_at=competition.starts_at, ends_at=competition.ends_at,
-        active=is_active(competition, now), players=players,
-        join_code=competition.join_code if user and competition.created_by == user.id else None,
+        question_count=competition.question_count, active=is_active(competition, now), players=players,
+        is_mine=mine, join_code=competition.join_code if mine else None,
         my_entry=entry_out(db, open_entry) if open_entry else None, my_best=best,
+        min_ranked_questions=MIN_RANKED_QUESTIONS,
     )
 
 
@@ -182,11 +201,6 @@ def my_entry(db: Session, entry_id: int, user: CurrentUser):
     if entry is None or entry.user_id != user.id:  # someone else's entry looks the same as a missing one
         raise HTTPException(404, "Entry not found")
     return entry
-
-
-def current_question(entry: CompetitionEntry):
-    competition = entry.competition
-    return question(entry.seed, entry.next_index, competition.question_count, competition.category)
 
 
 # ---------- routes ----------
@@ -203,7 +217,7 @@ def list_competitions(user: CurrentUser | None = Depends(get_optional_user), db:
             select(Competition)
             .where(Competition.kind == "class")
             .where((Competition.created_by == user.id) | Competition.id.in_(joined))
-            .order_by(Competition.ends_at.desc())
+            .order_by(Competition.created_at.desc())
             .limit(20)
         )
     return {
@@ -216,13 +230,13 @@ def list_competitions(user: CurrentUser | None = Depends(get_optional_user), db:
 def create_class_competition(
     body: ClassCompetitionIn, user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    """A competition for a class or a group of friends. Share the join code with them."""
+    """A competition for a class or a group of friends. It stays open until you close it."""
     get_or_create_profile(db, user)
     now = utc_now()
     for _ in range(5):  # retry in the very unlikely case that the join code is taken
         competition = Competition(
             kind="class", category=body.category, title=body.title.strip(), seed=new_seed("class"),
-            question_count=body.question_count, starts_at=now, ends_at=now + timedelta(days=body.days),
+            question_count=body.question_count, starts_at=now, ends_at=ALWAYS_OPEN[1],
             join_code=new_join_code(), created_by=user.id,
         )
         db.add(competition)
@@ -234,6 +248,20 @@ def create_class_competition(
     else:
         raise HTTPException(500, "Could not create a join code, please try again")
     db.refresh(competition)
+    return competition_out(db, competition, user, now)
+
+
+@router.post("/competitions/{competition_id}/close", response_model=CompetitionOut)
+def close_class_competition(
+    competition_id: int, user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    """Only the creator can close it. The leaderboard stays visible; nobody can start anymore."""
+    competition = db.get(Competition, competition_id)
+    if competition is None or competition.kind != "class" or competition.created_by != user.id:
+        raise HTTPException(404, "Competition not found")
+    now = utc_now()
+    competition.ends_at = min(competition.ends_at, now)
+    db.commit()
     return competition_out(db, competition, user, now)
 
 
@@ -260,31 +288,27 @@ def leaderboard(
     now = utc_now()
 
     if competition.kind == "ranked":
-        since = week_start(now) if period == "week" else None
-        best = best_entries(competition_id, since)
-        source = select(best.c.user_id, best.c.score, best.c.correct, best.c.total_ms)
-        source = source.subquery()
+        source = best_entries(competition_id, week_start(now) if period == "week" else None)
+        order = (source.c.average.desc(), source.c.average_ms)
     else:
         source = (
-            select(CompetitionEntry.user_id, CompetitionEntry.score, CompetitionEntry.correct, CompetitionEntry.total_ms)
+            select(CompetitionEntry, AVERAGE, AVERAGE_MS)
             .where(CompetitionEntry.competition_id == competition_id, CompetitionEntry.finished_at.is_not(None))
             .subquery()
         )
-    # rank() gives players with the same score and time the same rank
+        order = (source.c.score.desc(), source.c.total_ms)
+    # rank() gives the same rank to exactly equal results
     ranked = (
-        select(
-            source,
-            Profile.username,
-            func.rank().over(order_by=(source.c.score.desc(), source.c.total_ms)).label("rank"),
-        )
+        select(source, Profile.username, func.rank().over(order_by=order).label("rank"))
         .join(Profile, Profile.id == source.c.user_id)
         .order_by("rank")
     )
 
     def row(r):
         return LeaderboardRow(
-            rank=r.rank, name=display_name(r.user_id, r.username), score=r.score, correct=r.correct,
-            total_ms=r.total_ms, is_me=bool(user and r.user_id == user.id),
+            rank=r.rank, name=display_name(r.user_id, r.username), score=r.score, question_count=r.question_count,
+            average=round(r.average, 1), correct=r.correct, total_ms=r.total_ms,
+            is_me=bool(user and r.user_id == user.id),
         )
 
     rows = [row(r) for r in db.execute(ranked.limit(LEADERBOARD_SIZE))]
@@ -300,8 +324,13 @@ def leaderboard(
 
 
 @router.post("/competitions/{competition_id}/entries", response_model=EntryOut)
-def enter(competition_id: int, user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Ranked: continue your unfinished run, or start a new one with new questions.
+def enter(
+    competition_id: int,
+    body: EnterIn = Body(default_factory=EnterIn),
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Ranked: continue your unfinished run, or start a new one with new questions (choose how many).
     Class: start (or continue) your one attempt."""
     competition = db.get(Competition, competition_id)
     if competition is None:
@@ -318,8 +347,12 @@ def enter(competition_id: int, user: CurrentUser = Depends(get_current_user), db
     if not is_active(competition, utc_now()):
         raise HTTPException(409, "This competition is not open")
 
-    seed = new_seed(competition.seed) if competition.kind == "ranked" else competition.seed
-    entry = CompetitionEntry(competition_id=competition_id, user_id=user.id, seed=seed)
+    ranked = competition.kind == "ranked"
+    entry = CompetitionEntry(
+        competition_id=competition_id, user_id=user.id,
+        seed=new_seed(competition.seed) if ranked else competition.seed,
+        question_count=body.question_count if ranked else competition.question_count,
+    )
     db.add(entry)
     db.commit()
     db.refresh(entry)
@@ -374,7 +407,7 @@ def answer(
     entry.total_ms += response_ms
     entry.next_index += 1
     entry.question_served_at = None
-    if entry.next_index >= entry.competition.question_count:
+    if entry.next_index >= entry.question_count:
         entry.finished_at = now
     db.commit()
     db.refresh(entry)

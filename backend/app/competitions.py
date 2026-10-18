@@ -70,20 +70,16 @@ def question(seed, index, question_count, category):
 
 # ---------- speed scoring ----------
 
-def fast_ms(mode):
-    """Answer within this time for the full speed bonus: 3.5 s for 1 note ... 8 s for 4 notes."""
-    return int((2.0 + 1.5 * mode) * 1000)
+def half_life_ms(mode):
+    """How fast the speed bonus shrinks: 2 s for 1 note, 3.5 s for 2, 5 s for 3, 6.5 s for 4.
+    One note shrinks fastest; chords give more time to think."""
+    return int((2.0 + 1.5 * (mode - 1)) * 1000)
 
 
 def speed_factor(mode, ms):
-    """×1.5 when fast, falling steadily to ×0.5 at three times the fast time, ×0.25 when slower than that."""
-    fast = fast_ms(mode)
-    slow = fast * 3
-    if ms <= fast:
-        return 1.5
-    if ms >= slow:
-        return 0.25
-    return 1.5 - (ms - fast) / (slow - fast)
+    """×1.5 at the very start, shrinking smoothly toward ×0.25: every split second counts.
+    After one half-life the part above ×0.25 has halved (×0.875), after two ×0.56, and so on."""
+    return 0.25 + 1.25 * 0.5 ** (ms / half_life_ms(mode))
 
 
 def wrong_penalty(mode):
@@ -127,13 +123,28 @@ def rank_of(db: Session, entry):
     return db.scalar(select(func.count()).where(better_than(entry))) + 1
 
 
+# Ranked runs can have any length, so they're compared by AVERAGE points per question
+# (then average time). Very short runs don't count, so one lucky question can't win.
+MIN_RANKED_QUESTIONS = 10
+AVERAGE = (CompetitionEntry.score * 1.0 / CompetitionEntry.question_count).label("average")
+AVERAGE_MS = (CompetitionEntry.total_ms * 1.0 / CompetitionEntry.question_count).label("average_ms")
+
+
+def counts_for_ranking(entry):
+    return entry.finished_at is not None and entry.question_count >= MIN_RANKED_QUESTIONS
+
+
 def best_entries(competition_id, since=None):
-    """Ranked competitions: each player's best finished run (highest score, then fastest)."""
+    """Ranked competitions: each player's best finished run (highest average, then fastest)."""
     query = (
-        select(CompetitionEntry)
-        .where(CompetitionEntry.competition_id == competition_id, CompetitionEntry.finished_at.is_not(None))
+        select(CompetitionEntry, AVERAGE, AVERAGE_MS)
+        .where(
+            CompetitionEntry.competition_id == competition_id,
+            CompetitionEntry.finished_at.is_not(None),
+            CompetitionEntry.question_count >= MIN_RANKED_QUESTIONS,
+        )
         .distinct(CompetitionEntry.user_id)
-        .order_by(CompetitionEntry.user_id, CompetitionEntry.score.desc(), CompetitionEntry.total_ms)
+        .order_by(CompetitionEntry.user_id, AVERAGE.desc(), AVERAGE_MS)
     )
     if since is not None:
         query = query.where(CompetitionEntry.finished_at >= since)
@@ -141,9 +152,13 @@ def best_entries(competition_id, since=None):
 
 
 def best_rank(db: Session, entry, since=None):
-    """Rank of a player's best run among everyone's best runs."""
+    """Where a run places among everyone's best runs (None if it's too short to count)."""
+    if not counts_for_ranking(entry):
+        return None
+    average = entry.score / entry.question_count
+    average_ms = entry.total_ms / entry.question_count
     best = best_entries(entry.competition_id, since)
     better = select(func.count()).select_from(best).where(
-        or_(best.c.score > entry.score, and_(best.c.score == entry.score, best.c.total_ms < entry.total_ms))
+        or_(best.c.average > average, and_(best.c.average == average, best.c.average_ms < average_ms))
     )
     return db.scalar(better) + 1

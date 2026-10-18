@@ -46,7 +46,12 @@ export default function ContestPlay({ t, token, entry: startEntry, title, ranked
         <h2>{tc.finished}</h2>
         <p className="muted">{title}</p>
         <p className="stat-value">{tc.finalScore(entry.score, entry.correct, entry.question_count)}</p>
-        {entry.rank && <p>{ranked ? tc.runRank(entry.rank) : tc.rankText(entry.rank)}</p>}
+        {ranked && <p>{tc.average((entry.score / entry.question_count).toFixed(1))}</p>}
+        {entry.rank ? (
+          <p>{ranked ? tc.runRank(entry.rank) : tc.rankText(entry.rank)}</p>
+        ) : (
+          ranked && <p className="muted">{tc.tooShort}</p>
+        )}
         <div className="actions">
           {ranked && (
             <button type="button" className="button button-primary" onClick={onPlayAgain}>
