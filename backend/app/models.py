@@ -72,16 +72,19 @@ class TrainerResult(Base):
 
 
 class Competition(Base):
-    """A contest where everyone gets the same questions (made from `seed`).
+    """A contest.
 
-    kind: "daily" / "weekly" / "monthly" (created automatically) or "class" (created by a player,
-    joined with `join_code`). Times are stored in UTC.
+    kind "ranked": always open, play as often as you like; every run gets its own seed (new questions),
+                   the leaderboard shows each player's best run.
+    kind "class":  created by a player, joined with `join_code`, one attempt each, same questions for all.
+    category: "easy" (all questions 1 note) or "mixed" (1 → 4 notes). Times are stored in UTC.
     """
 
     __tablename__ = "competitions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     kind: Mapped[str] = mapped_column(String(10))
+    category: Mapped[str] = mapped_column(String(10), default="mixed")
     title: Mapped[str | None] = mapped_column(String(60))  # only for class competitions
     seed: Mapped[str] = mapped_column(String(40), unique=True)
     question_count: Mapped[int]
@@ -93,14 +96,14 @@ class Competition(Base):
 
 
 class CompetitionEntry(Base):
-    """One player's attempt at a competition (only one attempt each)."""
+    """One run / attempt at a competition (ranked: many per player, class: one per player)."""
 
     __tablename__ = "competition_entries"
-    __table_args__ = (UniqueConstraint("competition_id", "user_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     competition_id: Mapped[int] = mapped_column(ForeignKey("competitions.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
+    seed: Mapped[str] = mapped_column(String(40))  # ranked: new for every run; class: the competition's seed
     next_index: Mapped[int] = mapped_column(default=0)  # the question the player is on
     question_served_at: Mapped[datetime | None]  # when the current question's audio was first sent
     score: Mapped[int] = mapped_column(default=0)

@@ -48,6 +48,17 @@ def verify_token(token, get_key_client=get_jwks_client, legacy_secret=None):
     return jwt.decode(token, signing_key.key, algorithms=["ES256", "RS256"], audience="authenticated")
 
 
+def user_from_token(token):
+    """For WebSockets, where the token comes in a message instead of a header. Raises jwt.PyJWTError."""
+    claims = verify_token(token)
+    return CurrentUser(id=uuid.UUID(claims["sub"]), email=claims.get("email"))
+
+
+def get_token_checker():
+    """Dependency returning the token-checking function (tests swap it for a fake one)."""
+    return user_from_token
+
+
 def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
     """Like get_current_user, but guests get None instead of an error."""
     if credentials is None:
