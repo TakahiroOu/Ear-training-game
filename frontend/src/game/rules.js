@@ -16,10 +16,27 @@ export const MAX_MISTAKES = 50
 // and cost fewer mistakes.
 export const pointsFor = (mode) => mode
 export const mistakesFor = (mode) => 5 - mode
+// Right note letters but a wrong octave: half the points (rounded down), no mistakes
+export const halfPointsFor = (mode) => Math.floor(mode / 2)
+
+/** "C#4" -> "C#" (the note letter without its octave) */
+export const pitchClass = (note) => note.slice(0, -1)
 
 /** True when the player picked exactly the notes that were played (order doesn't matter). */
 export function isCorrect(selected, answer) {
   return selected.length === answer.length && answer.every((note) => selected.includes(note))
+}
+
+/**
+ * 'right'  - exactly the notes that were played
+ * 'octave' - the right note letters, but at least one in the wrong octave
+ * 'wrong'  - anything else
+ * (same rules as classify() in backend/app/scoring.py)
+ */
+export function classifyAnswer(selected, answer) {
+  if (isCorrect(selected, answer)) return 'right'
+  const letters = (notes) => notes.map(pitchClass).sort().join(' ')
+  return letters(selected) === letters(answer) ? 'octave' : 'wrong'
 }
 
 /**
@@ -28,6 +45,7 @@ export function isCorrect(selected, answer) {
  *   'selected' - picked by the player (blue)
  *   after checking:
  *   'correct'  - picked and right (green)
+ *   'octave'   - picked, right note letter but wrong octave (orange)
  *   'wrong'    - picked but not in the answer (red)
  *   'missed'   - in the answer but not picked (yellow)
  */
@@ -36,6 +54,7 @@ export function keyStatus(note, { selected, answer, result }) {
   if (!result) return isSelected ? 'selected' : 'idle'
   const isAnswer = answer.includes(note)
   if (isSelected && isAnswer) return 'correct'
+  if (isSelected && answer.some((a) => pitchClass(a) === pitchClass(note))) return 'octave'
   if (isSelected) return 'wrong'
   if (isAnswer) return 'missed'
   return 'idle'

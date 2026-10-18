@@ -150,8 +150,8 @@ Questions usually start easier and get harder toward the end. Sight-singing (新
 New tables: `courses`, `enrollments` (user_id, course, plan_months, exam_date, start_step, started_at), `exercises` (id, type, step, seed, data), `exercise_attempts` (user_id, exercise_id, answer, score, created_at).
 
 ### Phase 4 — More game modes and difficulty levels (casual course)
-- **Smarter feedback**: tell apart "right note, wrong octave" (e.g. C5 instead of C4) from "a different note". A wrong octave counts as **half right** (no mistake points, half the points), and the message says "right notes, check the octave".
-- **Choose the key (調性)**: questions use only the notes of a chosen key (e.g. D major, B minor), or random keys. The key's tonic chord can be played first so you hear the key.
+- ✅ **Smarter feedback**: tell apart "right note, wrong octave" (e.g. C5 instead of C4) from "a different note". A wrong octave counts as **half right** (no mistake points, half the points rounded down: 1 note → 0, 2–3 notes → 1, 4 notes → 2), and the message says "right notes, check the octave".
+- ✅ **Choose the key (調性)**: questions use only the notes of a chosen key (e.g. D major, B minor), or random keys. The key's tonic chord can be played first so you hear the key.
 - **Answer by name instead of keys**: choose the interval name (短3度…), chord name (長三和音, 属七…), inversion and root with buttons, instead of finding every note on the piano.
 - **Interval & chord trainer settings** (one settings screen):
   - Intervals to include: 短二度 … オクターブ (m2 to octave)
@@ -249,5 +249,5 @@ Legal notes are warnings, not legal advice. Rules depend on the country, so chec
 - Phase 2 and later: restart the containers and confirm users and scores are still there (they live in Supabase, not in the containers). Security check: try to read a table with only the public anon key, for example with `supabase-js` in the browser console. It must return nothing.
 
 ## 7. Order of work
-Phases are numbered in build order: 2 (accounts) → 3 (exam course) → 4 (more game modes) → 5 (competitions) → 6 (online) → 7 (SEO) → 8 (subscription) → 9 (phone app) → 10 (ads).
-The exam course comes early because it is the paid product, but it only earns money after going online (6) and adding payments (8).
+Build order: 2 (accounts) ✅ → 3a (exam syllabus) ✅ → **4 (more game modes)** → 5 (competitions) → 6 (online) → 3b–3f (rest of the exam course) → 7 (SEO) → 8 (subscription) → 9 (phone app) → 10 (ads).
+Why: the syllabus waits for a teacher's review, competitions need real players (so the app must be online), free features online early bring users and give Google time to find the site, and the paid course can only be sold after going online (6) and adding payments (8). The trainer modes also build music logic the exam course reuses.

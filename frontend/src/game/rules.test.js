@@ -4,6 +4,8 @@ import { test } from 'node:test'
 import {
   BLACK_NOTES,
   WHITE_NOTES,
+  classifyAnswer,
+  halfPointsFor,
   isCorrect,
   keyStatus,
   mistakesFor,
@@ -25,6 +27,15 @@ test('answer is correct only with exactly the same notes, in any order', () => {
 test('scoring matches the original game', () => {
   assert.deepEqual([1, 2, 3, 4].map(pointsFor), [1, 2, 3, 4])
   assert.deepEqual([1, 2, 3, 4].map(mistakesFor), [4, 3, 2, 1])
+})
+
+test('wrong octave is told apart from a wrong note', () => {
+  assert.equal(classifyAnswer(['G4', 'C4', 'E4'], ['C4', 'E4', 'G4']), 'right')
+  assert.equal(classifyAnswer(['C5', 'E4', 'G4'], ['C4', 'E4', 'G4']), 'octave')
+  assert.equal(classifyAnswer(['C#4'], ['C4']), 'wrong')
+  assert.equal(classifyAnswer(['C4', 'E4'], ['C4', 'E4', 'G4']), 'wrong')
+  assert.deepEqual([1, 2, 3, 4].map(halfPointsFor), [0, 1, 1, 2])
+  assert.equal(keyStatus('C5', { selected: ['C5'], answer: ['C4'], result: 'octave' }), 'octave')
 })
 
 test('key colors before and after checking', () => {

@@ -37,7 +37,7 @@ export default function StatsPage({ t, token }) {
       </div>
 
       <h3>{t.accuracyByMode}</h3>
-      {stats.by_mode.map(({ mode, answered, correct }) => (
+      {stats.by_mode.map(({ mode, answered, correct, octave }) => (
         <div key={mode} className="bar-row">
           <span className="bar-label">{t.modeButton(mode)}</span>
           <div className="bar">
@@ -45,6 +45,7 @@ export default function StatsPage({ t, token }) {
           </div>
           <span className="bar-value">
             {percent(correct, answered)}% ({correct}/{answered})
+            {octave > 0 && ` · ${t.octaveShort} ${octave}`}
           </span>
         </div>
       ))}

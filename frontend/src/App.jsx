@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useAuth } from './auth/useAuth.js'
 import AccountPage from './components/AccountPage.jsx'
 import GameOver from './components/GameOver.jsx'
+import KeySelector from './components/KeySelector.jsx'
 import ModeSelector from './components/ModeSelector.jsx'
 import Piano from './components/Piano.jsx'
 import RulesScreen from './components/RulesScreen.jsx'
 import ScoreBoard from './components/ScoreBoard.jsx'
 import StatsPage from './components/StatsPage.jsx'
+import { spellNote } from './game/keys.js'
 import { useGame } from './game/useGame.js'
 import { LANGUAGES, useLanguage } from './i18n/index.js'
 
@@ -29,12 +31,18 @@ function App() {
       } else if (event.key === ' ') {
         event.preventDefault() // don't scroll the page
         game.replay()
+      } else if (event.key === 'k' || event.key === 'K') {
+        game.hearKey()
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [game, page])
+
+  // Note names as written in the key of the current question (e.g. B♭ in F major)
+  const spell = (note) => spellNote(note, game.questionKey ?? game.key)
+  const answerText = game.answer.map(spell).join(' ')
 
   const navButton = (target, label) => (
     <button
@@ -78,6 +86,13 @@ function App() {
       {page === 'play' && game.screen === 'playing' && (
         <>
           <ScoreBoard t={t} points={game.points} mistakes={game.mistakes} />
+          <KeySelector
+            t={t}
+            language={language}
+            value={game.key}
+            onChange={game.setKey}
+            onHearKey={game.hearKey}
+          />
           <ModeSelector t={t} currentMode={game.mode} onChoose={game.newQuestion} />
 
           <div className="actions">
@@ -99,8 +114,10 @@ function App() {
               ? t.serverError
               : game.result === 'right'
                 ? `${t.right} ${t.next}`
-                : game.result === 'wrong'
-                  ? `${t.wrong(game.answer.join(' '))} ${t.next}`
+                : game.result === 'octave'
+                  ? `${t.octave(answerText)} ${t.next}`
+                  : game.result === 'wrong'
+                  ? `${t.wrong(answerText)} ${t.next}`
                   : game.hasQuestion
                     ? t.hintListen
                     : t.hintChooseMode}
@@ -111,6 +128,7 @@ function App() {
             answer={game.answer}
             result={game.result}
             onPress={game.pressKey}
+            spell={spell}
           />
 
           {game.saveFailed && <p className="message message-error">{t.saveFailed}</p>}

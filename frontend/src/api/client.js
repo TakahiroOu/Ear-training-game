@@ -17,9 +17,14 @@ async function request(path, { token, method = 'GET', body } = {}) {
   return response.json()
 }
 
-/** Ask the server for a new question: a list of note names like ["C4", "E4", "G4"]. */
-export async function fetchQuestion(mode) {
-  const data = await request(`/api/questions?mode=${mode}`)
+/**
+ * Ask the server for a new question: a list of note names like ["C4", "E4", "G4"].
+ * With a key (e.g. "D-major"), only notes and chords of that key are used.
+ */
+export async function fetchQuestion(mode, key = null) {
+  const params = new URLSearchParams({ mode })
+  if (key) params.set('key', key)
+  const data = await request(`/api/questions?${params}`)
   return data.notes
 }
 

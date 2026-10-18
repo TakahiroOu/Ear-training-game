@@ -6,7 +6,7 @@ import Key from './Key.jsx'
 const WHITE_WIDTH = 100 / WHITE_NOTES.length
 const BLACK_WIDTH = WHITE_WIDTH * 0.65
 
-export default function Piano({ selected, answer, result, onPress }) {
+export default function Piano({ selected, answer, result, onPress, spell }) {
   const round = { selected, answer, result }
 
   return (
@@ -20,6 +20,7 @@ export default function Piano({ selected, answer, result, onPress }) {
             status={keyStatus(note, round)}
             position={{ left: `${i * WHITE_WIDTH}%`, width: `${WHITE_WIDTH}%` }}
             onPress={onPress}
+            spell={spell}
           />
         ))}
         {BLACK_NOTES.map((note) => {
@@ -34,6 +35,7 @@ export default function Piano({ selected, answer, result, onPress }) {
               status={keyStatus(note, round)}
               position={{ left: `${left}%`, width: `${BLACK_WIDTH}%` }}
               onPress={onPress}
+              spell={spell}
             />
           )
         })}

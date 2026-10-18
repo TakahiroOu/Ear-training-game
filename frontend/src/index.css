@@ -8,6 +8,7 @@
   --green: #22c55e;
   --red: #ef4444;
   --yellow: #facc15;
+  --orange: #fb923c;
 }
 
 * {
@@ -121,7 +122,7 @@ h1 {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 4.5em 1fr 8em;
+  grid-template-columns: 4.5em 1fr auto;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
@@ -282,6 +283,32 @@ kbd {
   color: var(--red);
 }
 
+.key-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.key-selector label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 220px;
+}
+
+.key-selector select {
+  flex: 1;
+  font-size: 1rem;
+  min-height: 44px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #3a3a3a;
+  color: var(--text);
+}
+
 .mode-selector,
 .actions {
   display: flex;
@@ -305,6 +332,11 @@ kbd {
 
 .message-right {
   color: var(--green);
+  font-weight: 600;
+}
+
+.message-octave {
+  color: var(--orange);
   font-weight: 600;
 }
 
@@ -375,6 +407,11 @@ kbd {
 .key-wrong {
   background: var(--red);
   color: #fff;
+}
+
+.key-octave {
+  background: var(--orange);
+  color: #222;
 }
 
 .key-missed {
