@@ -2,20 +2,22 @@ import { useEffect, useState } from 'react'
 import { fetchLeaderboard } from '../api/client.js'
 import { contestTitle, timeLeft } from './format.js'
 
-export default function Leaderboard({ t, language, token, competitionId, onBack }) {
+export default function Leaderboard({ t, token, competitionId, onBack }) {
+  const [period, setPeriod] = useState('week') // ranked: 'week' or 'all'
   const [board, setBoard] = useState(null)
   const [error, setError] = useState(false)
   const tc = t.contest
 
   useEffect(() => {
-    fetchLeaderboard(token, competitionId)
+    fetchLeaderboard(token, competitionId, period)
       .then(setBoard)
       .catch(() => setError(true))
-  }, [token, competitionId])
+  }, [token, competitionId, period])
 
   if (error) return <section className="panel message-error">{t.serverError}</section>
   if (!board) return <section className="panel muted">…</section>
 
+  const ranked = board.competition.kind === 'ranked'
   const row = (r) => (
     <tr key={`${r.rank}-${r.name}`} className={r.is_me ? 'row-me' : ''}>
       <td>{r.rank}</td>
@@ -31,10 +33,25 @@ export default function Leaderboard({ t, language, token, competitionId, onBack 
       <button type="button" className="link" onClick={onBack}>
         ← {tc.back}
       </button>
-      <h2>{contestTitle(t, board.competition, language)}</h2>
+      <h2>{contestTitle(t, board.competition)}</h2>
       <p className="muted">
-        {tc.players(board.competition.players)} · {timeLeft(t, board.competition)}
+        {tc.players(board.competition.players)}
+        {!ranked && ` · ${timeLeft(t, board.competition)}`}
       </p>
+      {ranked && (
+        <div className="choice">
+          {['week', 'all'].map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={p === period ? 'button button-active' : 'button'}
+              onClick={() => setPeriod(p)}
+            >
+              {tc.periods[p]}
+            </button>
+          ))}
+        </div>
+      )}
       {board.rows.length === 0 ? (
         <p>{tc.noEntries}</p>
       ) : (
@@ -43,7 +60,7 @@ export default function Leaderboard({ t, language, token, competitionId, onBack 
             <tr>
               <th>{tc.rank}</th>
               <th>{tc.name}</th>
-              <th>{tc.scoreCol}</th>
+              <th>{ranked ? tc.bestScore : tc.scoreCol}</th>
               <th>{tc.correctCol}</th>
               <th>{tc.time}</th>
             </tr>

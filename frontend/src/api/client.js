@@ -71,7 +71,7 @@ export function setUsername(token, username) {
 
 // ---------- competitions ----------
 
-/** { current: [daily, weekly, monthly], classes: [...] } */
+/** { ranked: [easy, mixed], classes: [...] } */
 export function fetchCompetitions(token) {
   return request('/api/competitions', { token })
 }
@@ -84,8 +84,23 @@ export function findCompetitionByCode(token, code) {
   return request(`/api/competitions/code/${encodeURIComponent(code)}`, { token })
 }
 
-export function fetchLeaderboard(token, competitionId) {
-  return request(`/api/competitions/${competitionId}/leaderboard`, { token })
+/** period: 'all' or 'week' (ranked competitions show each player's best run) */
+export function fetchLeaderboard(token, competitionId, period = 'all') {
+  return request(`/api/competitions/${competitionId}/leaderboard?period=${period}`, { token })
+}
+
+// ---------- live rooms ----------
+
+/** Create a live room. Returns { code }. */
+export function createRoom(token) {
+  return request('/api/rooms', { token, method: 'POST' })
+}
+
+/** WebSocket address of a room, e.g. ws://localhost:5173/api/rooms/ABC123/ws */
+export function roomSocketUrl(code) {
+  const base = new URL(API_URL || window.location.origin)
+  base.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${base.origin}/api/rooms/${encodeURIComponent(code)}/ws`
 }
 
 /** Start (or continue) your one attempt. */

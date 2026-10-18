@@ -1,31 +1,19 @@
-// How contests are named and timed on screen. Contest periods follow Japan time.
+// How contests are named and timed on screen.
 
-const TIME_ZONE = 'Asia/Tokyo'
-const LOCALES = { en: 'en-US', ja: 'ja-JP' }
+const toDate = (utcText) => new Date(utcText + 'Z') // the server sends UTC times without a time zone
 
-// The server sends UTC times without a time zone, so mark them as UTC
-const toDate = (utcText) => new Date(utcText + 'Z')
-
-export function contestTitle(t, competition, language) {
-  const locale = LOCALES[language]
-  const start = toDate(competition.starts_at)
-  const day = start.toLocaleDateString(locale, { timeZone: TIME_ZONE, month: 'numeric', day: 'numeric' })
-  switch (competition.kind) {
-    case 'daily':
-      return t.contest.daily(day)
-    case 'weekly':
-      return t.contest.weekly(day)
-    case 'monthly':
-      return t.contest.monthly(start.toLocaleDateString(locale, { timeZone: TIME_ZONE, year: 'numeric', month: 'long' }))
-    default:
-      return competition.title
-  }
+export function contestTitle(t, competition) {
+  const category = t.contest.categories[competition.category]
+  return competition.kind === 'ranked' ? t.contest.ranked(category) : `${competition.title} (${category})`
 }
 
-/** "ends in 5h 20m", or "ended" */
+/** "ends in 5h 20m", or "ended" (class competitions only; ranked ones never end) */
 export function timeLeft(t, competition, now = Date.now()) {
   const ms = toDate(competition.ends_at) - now
   if (ms <= 0) return t.contest.ended
   const minutes = Math.floor(ms / 60000)
   return t.contest.endsIn(t.contest.duration(Math.floor(minutes / 1440), Math.floor(minutes / 60) % 24, minutes % 60))
 }
+
+/** +150 / −50 */
+export const signed = (points) => (points >= 0 ? `+${points}` : `−${Math.abs(points)}`)

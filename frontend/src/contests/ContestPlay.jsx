@@ -1,13 +1,28 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Piano from '../components/Piano.jsx'
 import { spellNote } from '../game/keys.js'
+import { signed } from './format.js'
 import { useContestPlay } from './useContestPlay.js'
 
-export default function ContestPlay({ t, token, entry: startEntry, title, onLeaderboard, onBack }) {
+/** Seconds since the question started, updated a few times per second. */
+function useStopwatch(running, resetKey) {
+  const [elapsed, setElapsed] = useState({ key: null, seconds: 0 })
+  useEffect(() => {
+    if (!running) return
+    const started = Date.now()
+    const timer = setInterval(() => setElapsed({ key: resetKey, seconds: (Date.now() - started) / 1000 }), 100)
+    return () => clearInterval(timer)
+  }, [running, resetKey])
+  // A new question (new resetKey) starts from 0 until the first tick
+  return running && elapsed.key === resetKey ? elapsed.seconds : 0
+}
+
+export default function ContestPlay({ t, token, entry: startEntry, title, ranked, onPlayAgain, onLeaderboard, onBack }) {
   const play = useContestPlay(token, startEntry)
   const { entry, answered } = play
   const tc = t.contest
   const spell = (note) => spellNote(note, null)
+  const seconds = useStopwatch(!answered && !play.busy && !entry.finished, entry.next_index)
 
   // Shortcuts: Space = replay, Enter = submit / next
   useEffect(() => {
@@ -31,9 +46,14 @@ export default function ContestPlay({ t, token, entry: startEntry, title, onLead
         <h2>{tc.finished}</h2>
         <p className="muted">{title}</p>
         <p className="stat-value">{tc.finalScore(entry.score, entry.correct, entry.question_count)}</p>
-        {entry.rank && <p>{tc.rankText(entry.rank)}</p>}
+        {entry.rank && <p>{ranked ? tc.runRank(entry.rank) : tc.rankText(entry.rank)}</p>}
         <div className="actions">
-          <button type="button" className="button button-primary" onClick={onLeaderboard}>
+          {ranked && (
+            <button type="button" className="button button-primary" onClick={onPlayAgain}>
+              {tc.playAgain}
+            </button>
+          )}
+          <button type="button" className="button" onClick={onLeaderboard}>
             {tc.leaderboard}
           </button>
           <button type="button" className="button" onClick={onBack}>
@@ -47,6 +67,14 @@ export default function ContestPlay({ t, token, entry: startEntry, title, onLead
   // While a question is open, the server hasn't told us its notes, so only our own picks are colored
   const questionNumber = answered ? entry.next_index : entry.next_index + 1
   const mode = answered ? answered.question_notes.length : entry.next_mode
+  const answerText = answered?.question_notes.map(spell).join(' ')
+  const resultText = !answered
+    ? null
+    : answered.result === 'right'
+      ? t.right
+      : answered.result === 'octave'
+        ? t.octave(answerText)
+        : t.wrong(answerText)
 
   return (
     <>
@@ -82,8 +110,8 @@ export default function ContestPlay({ t, token, entry: startEntry, title, onLead
         {play.error
           ? tc.audioError
           : answered
-            ? `${answered.result === 'right' ? t.right : answered.result === 'octave' ? t.octave(answered.question_notes.map(spell).join(' ')) : t.wrong(answered.question_notes.map(spell).join(' '))} ${tc.pointsWon(answered.points)}`
-            : t.hintListen}
+            ? `${resultText} ${tc.pointsAndTime(signed(answered.points), (answered.response_ms / 1000).toFixed(1))}`
+            : `${t.hintListen} ${tc.stopwatch(seconds.toFixed(1))}`}
       </p>
       {play.error && (
         <button type="button" className="button" onClick={play.retry}>
@@ -98,6 +126,7 @@ export default function ContestPlay({ t, token, entry: startEntry, title, onLead
         onPress={play.pressKey}
         spell={spell}
       />
+      <p className="muted small">{tc.speedRule}</p>
     </>
   )
 }

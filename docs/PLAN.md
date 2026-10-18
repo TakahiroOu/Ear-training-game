@@ -171,7 +171,13 @@ New tables: `courses`, `enrollments` (user_id, course, plan_months, exam_date, s
 - New table `user_progress` (user_id, mode, level, best_accuracy).
 
 ### Phase 5 — Competitions ✅ core finished
-Built: daily (20 questions) / weekly (30) / monthly (40) contests that start at midnight Japan time, class competitions with a 6-letter join code, one attempt each, leaderboard with chosen usernames (never emails). The server mixes each question's audio (`backend/app/audio.py`) so the browser never gets the note names before answering, and it times and grades every answer. Scoring: 100 × notes for right, half for the wrong octave; ties go to the faster player. Still to do: badges, titles and the hall of fame.
+Built (changed after feedback on 2026-10-18):
+- **Ranked play, anytime**: Easy (20 single notes) and Mixed (20 questions, 1 → 4 notes). Play as often as you like with new questions each run; leaderboards show each player's best run, this week and all time. (The daily/weekly/monthly contests were removed.)
+- **Speed scoring**: 100 × notes × speed (×1.5 within 3.5 s for 1 note … 8 s for 4 notes, down to ×0.5 at three times that, ×0.25 when slower). Wrong octave: half. **Wrong answer: −50 × notes.** Ties go to the faster player.
+- **Live rooms with friends** (WebSockets): a host creates a room and shares its code (2–8 players). Everyone hears the same question at the same time; the first right answers score (1 scorer with 2–3 players, half the players with 4+; later ones get ×0.6, ×0.4, ×0.3). A wrong answer costs points and locks you out of that question. No fixed number of questions: the game ends when someone reaches the target score (500 / 1000 / 2000 / 3000), then the final ranking is shown. Rooms live in the server's memory (several servers would need Redis).
+- **Class competitions**: Easy or Mixed, one attempt each, same questions for everyone, 6-letter join code.
+- Cheating protection: the server mixes each question's audio (`backend/app/audio.py`), so browsers never get the note names before answering; it also times and grades answers.
+- Still to do: badges, titles, hall of fame; saving live-room results to stats.
 - All competitions are **free to enter** (see section 5 for why there are no paid entries).
 - **Daily challenge**: everyone gets the *same* 20 questions each day (generated from a seed such as the date). The score uses accuracy and speed. There's a daily and an all-time leaderboard.
 - **Weekly and monthly contests**: longer question sets with fixed start and end times. Winners get rankings, badges, titles and a "hall of fame" page. Later, prizes may come from sponsors (see section 5).

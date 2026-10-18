@@ -83,7 +83,7 @@ function App() {
       {page === 'account' && <AccountPage t={t} auth={auth} onLoggedIn={() => setPage('play')} />}
       {page === 'stats' && auth.token && <StatsPage t={t} token={auth.token} />}
       {page === 'trainer' && <TrainerPage t={t} auth={auth} />}
-      {page === 'contests' && <ContestsPage t={t} language={language} auth={auth} />}
+      {page === 'contests' && <ContestsPage t={t} auth={auth} />}
 
       {page === 'play' && game.screen === 'rules' && (
         <RulesScreen t={t} loading={game.loading} error={game.error} onStart={game.start} />

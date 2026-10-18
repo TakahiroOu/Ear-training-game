@@ -10,7 +10,10 @@ export default defineConfig({
     // Send every request starting with /api to the Python backend.
     // Inside Docker the backend is called "backend"; outside Docker it's localhost.
     proxy: {
-      '/api': process.env.API_URL || 'http://localhost:8000',
+      '/api': {
+        target: process.env.API_URL || 'http://localhost:8000',
+        ws: true, // also forward WebSocket connections (live rooms)
+      },
     },
     // Windows folders shared with Docker don't report file changes, so check for them regularly
     watch: { usePolling: true },
