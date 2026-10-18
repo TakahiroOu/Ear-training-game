@@ -124,4 +124,4 @@ def test_rls_is_on_for_every_table(db):
     from sqlalchemy import text
 
     tables = db.execute(text("SELECT relname FROM pg_class WHERE relrowsecurity")).scalars().all()
-    assert {"profiles", "game_sessions", "answers", "alembic_version"} <= set(tables)
+    assert {"profiles", "game_sessions", "answers", "trainer_results", "alembic_version"} <= set(tables)

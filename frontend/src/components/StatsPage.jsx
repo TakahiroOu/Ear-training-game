@@ -16,7 +16,9 @@ export default function StatsPage({ t, token }) {
 
   if (error) return <section className="panel message-error">{t.statsError}</section>
   if (!stats) return <section className="panel muted">…</section>
-  if (stats.games_played === 0) return <section className="panel">{t.noStats}</section>
+  if (stats.games_played === 0 && stats.trainer_tests.length === 0) {
+    return <section className="panel">{t.noStats}</section>
+  }
 
   return (
     <section className="panel stats">
@@ -60,6 +62,22 @@ export default function StatsPage({ t, token }) {
               </span>
             ))}
           </p>
+        </>
+      )}
+
+      {stats.trainer_tests.length > 0 && (
+        <>
+          <h3>{t.trainerTests}</h3>
+          <table className="table">
+            <tbody>
+              {stats.trainer_tests.map((test) => (
+                <tr key={test.created_at}>
+                  <td>{new Date(test.created_at + 'Z').toLocaleString()}</td>
+                  <td>{t.trainer.testScore(test.correct, test.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </>
       )}
 

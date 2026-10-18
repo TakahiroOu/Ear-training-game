@@ -42,7 +42,7 @@ def db(engine):
     with Session(engine) as session:
         yield session
     with engine.begin() as connection:  # empty the tables after each test
-        connection.execute(text("TRUNCATE profiles, game_sessions, answers RESTART IDENTITY CASCADE"))
+        connection.execute(text("TRUNCATE profiles, game_sessions, answers, trainer_results RESTART IDENTITY CASCADE"))
 
 
 @pytest.fixture

@@ -92,6 +92,104 @@ h1 {
   color: var(--accent);
 }
 
+/* ---------- trainer ---------- */
+.settings-group {
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  margin: 0 0 12px;
+  padding: 8px 12px 12px;
+}
+
+.settings-group legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.quick-select {
+  display: flex;
+  gap: 8px;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px 12px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+}
+
+.range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range select {
+  font-size: 1rem;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #3a3a3a;
+  color: var(--text);
+}
+
+.choice,
+.answer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.start-button {
+  width: 100%;
+}
+
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.replay-button {
+  margin-bottom: 8px;
+}
+
+.answer-group h3 {
+  margin: 12px 0 6px;
+  font-size: 1rem;
+}
+
+.trainer-quiz > .button-primary {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.button-correct {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.button-wrong {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
 /* ---------- stats ---------- */
 .stats h3 {
   margin: 20px 0 8px;

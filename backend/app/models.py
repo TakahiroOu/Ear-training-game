@@ -6,7 +6,7 @@ Changing a table? Also add a migration in alembic/versions/ (see README).
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ARRAY, ForeignKey, String, func
+from sqlalchemy import ARRAY, JSON, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -56,3 +56,16 @@ class Answer(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     session: Mapped[GameSession] = relationship(back_populates="answers")
+
+
+class TrainerResult(Base):
+    """One finished test in the interval & chord trainer."""
+
+    __tablename__ = "trainer_results"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
+    total: Mapped[int]
+    correct: Mapped[int]
+    settings: Mapped[dict] = mapped_column(JSON)  # which intervals/chords/voicings/range were tested
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())

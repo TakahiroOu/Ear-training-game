@@ -152,8 +152,8 @@ New tables: `courses`, `enrollments` (user_id, course, plan_months, exam_date, s
 ### Phase 4 — More game modes and difficulty levels (casual course)
 - ✅ **Smarter feedback**: tell apart "right note, wrong octave" (e.g. C5 instead of C4) from "a different note". A wrong octave counts as **half right** (no mistake points, half the points rounded down: 1 note → 0, 2–3 notes → 1, 4 notes → 2), and the message says "right notes, check the octave".
 - ✅ **Choose the key (調性)**: questions use only the notes of a chosen key (e.g. D major, B minor), or random keys. The key's tonic chord can be played first so you hear the key.
-- **Answer by name instead of keys**: choose the interval name (短3度…), chord name (長三和音, 属七…), inversion and root with buttons, instead of finding every note on the piano.
-- **Interval & chord trainer settings** (one settings screen):
+- ✅ **Answer by name instead of keys** (Trainer page): choose the interval name (短3度…), chord name (長三和音, 属七…), inversion and root with buttons, instead of finding every note on the piano.
+- ✅ **Interval & chord trainer settings** (one settings screen; transposition not built yet, since the range setting covers most of it):
   - Intervals to include: 短二度 … オクターブ (m2 to octave)
   - Triads: major / minor / diminished / augmented
   - Seventh chords: dominant 7th / minor 7th / major 7th / half-diminished (減五短七) / diminished 7th

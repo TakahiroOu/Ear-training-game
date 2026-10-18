@@ -28,8 +28,14 @@ export async function loadSounds() {
 }
 
 /** Play one or more notes at exactly the same moment, e.g. playNotes(['C4', 'E4', 'G4']). */
-export function playNotes(notes) {
-  piano.triggerAttackRelease(notes, 3)
+export function playNotes(notes, seconds = 3) {
+  piano.triggerAttackRelease(notes, seconds)
+}
+
+/** Play notes one after another, each lasting `seconds`. */
+export function playMelody(notes, seconds = 1) {
+  const now = Tone.now()
+  notes.forEach((note, i) => piano.triggerAttackRelease(note, seconds, now + i * seconds))
 }
 
 export function playResult(correct) {
