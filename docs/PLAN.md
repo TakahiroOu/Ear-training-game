@@ -170,7 +170,8 @@ New tables: `courses`, `enrollments` (user_id, course, plan_months, exam_date, s
 - All generators live in `backend/app/music.py` with unit tests (e.g. "a minor triad is always root, +3, +7 semitones").
 - New table `user_progress` (user_id, mode, level, best_accuracy).
 
-### Phase 5 — Competitions
+### Phase 5 — Competitions ✅ core finished
+Built: daily (20 questions) / weekly (30) / monthly (40) contests that start at midnight Japan time, class competitions with a 6-letter join code, one attempt each, leaderboard with chosen usernames (never emails). The server mixes each question's audio (`backend/app/audio.py`) so the browser never gets the note names before answering, and it times and grades every answer. Scoring: 100 × notes for right, half for the wrong octave; ties go to the faster player. Still to do: badges, titles and the hall of fame.
 - All competitions are **free to enter** (see section 5 for why there are no paid entries).
 - **Daily challenge**: everyone gets the *same* 20 questions each day (generated from a seed such as the date). The score uses accuracy and speed. There's a daily and an all-time leaderboard.
 - **Weekly and monthly contests**: longer question sets with fixed start and end times. Winners get rankings, badges, titles and a "hall of fame" page. Later, prizes may come from sponsors (see section 5).
@@ -180,7 +181,7 @@ New tables: `courses`, `enrollments` (user_id, course, plan_months, exam_date, s
 - *Optional later*: live 1‑vs‑1 battles over WebSockets (FastAPI supports them).
 
 ### Phase 6 — Go online
-- Use production Docker images (`npm run build` → static files served by Nginx, `uvicorn` for the API).
+- Use production Docker images (`npm run build` → static files served by Nginx, `uvicorn` for the API). The backend image must include the WAV samples (`sounds/`), which competitions use, and the frontend bundle should be split (Vite warns it is over 500 kB).
 - Simplest hosting for the two containers: **Render** or **Railway** (they run Docker containers; small projects start free or cheap). Alternative: one small VPS running `docker compose`. The database and login stay on Supabase (`ear-training-prod` project).
 - HTTPS is automatic on those hosts and on Supabase. Secrets go in the host's environment-variable settings. Supabase makes daily backups. Note that **free Supabase projects pause after about a week with no activity**, so upgrade to the paid plan once real users depend on it.
 - GitHub Actions: run backend tests and the frontend build on every push. Your repo is already on GitHub at TakahiroOu/Ear-training-game.

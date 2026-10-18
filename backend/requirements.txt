@@ -4,6 +4,8 @@ uvicorn[standard]==0.34.2
 sqlalchemy==2.0.41
 psycopg[binary]==3.2.9
 alembic==1.16.1
+# Mixes piano samples into competition audio
+numpy==2.2.6
 # Checks the login tokens that Supabase gives to the browser
 pyjwt[crypto]==2.10.1
 # Tests

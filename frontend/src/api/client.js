@@ -3,7 +3,7 @@
 // For the phone app or a separate server later, set VITE_API_URL.
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-async function request(path, { token, method = 'GET', body } = {}) {
+async function request(path, { token, method = 'GET', body, binary = false } = {}) {
   const headers = {}
   if (token) headers.Authorization = `Bearer ${token}` // the login token from Supabase
   if (body) headers['Content-Type'] = 'application/json'
@@ -16,9 +16,10 @@ async function request(path, { token, method = 'GET', body } = {}) {
   if (!response.ok) {
     const error = new Error(`Server error ${response.status}`)
     error.status = response.status // e.g. 422 = the server didn't accept what we sent
+    error.detail = await response.json().then((data) => data.detail).catch(() => null)
     throw error
   }
-  return response.json()
+  return binary ? response.arrayBuffer() : response.json()
 }
 
 /**
@@ -55,6 +56,54 @@ export function fetchTrainerQuestion(settings) {
 /** Logged-in players: save a finished trainer test. */
 export function saveTrainerResult(token, result) {
   return request('/api/trainer/results', { token, method: 'POST', body: result })
+}
+
+// ---------- profile ----------
+
+export function fetchMe(token) {
+  return request('/api/me', { token })
+}
+
+/** Choose the name shown on leaderboards. */
+export function setUsername(token, username) {
+  return request('/api/me', { token, method: 'PATCH', body: { username } })
+}
+
+// ---------- competitions ----------
+
+/** { current: [daily, weekly, monthly], classes: [...] } */
+export function fetchCompetitions(token) {
+  return request('/api/competitions', { token })
+}
+
+export function createClassCompetition(token, competition) {
+  return request('/api/competitions', { token, method: 'POST', body: competition })
+}
+
+export function findCompetitionByCode(token, code) {
+  return request(`/api/competitions/code/${encodeURIComponent(code)}`, { token })
+}
+
+export function fetchLeaderboard(token, competitionId) {
+  return request(`/api/competitions/${competitionId}/leaderboard`, { token })
+}
+
+/** Start (or continue) your one attempt. */
+export function enterCompetition(token, competitionId) {
+  return request(`/api/competitions/${competitionId}/entries`, { token, method: 'POST' })
+}
+
+/** The current question as audio (the server never sends its note names before you answer). */
+export function fetchQuestionAudio(token, entryId) {
+  return request(`/api/entries/${entryId}/audio`, { token, binary: true })
+}
+
+export function answerCompetition(token, entryId, index, givenNotes) {
+  return request(`/api/entries/${entryId}/answers`, {
+    token,
+    method: 'POST',
+    body: { index, given_notes: givenNotes },
+  })
 }
 
 export function fetchStats(token) {

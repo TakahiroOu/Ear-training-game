@@ -38,6 +38,19 @@ export function playMelody(notes, seconds = 1) {
   notes.forEach((note, i) => piano.triggerAttackRelease(note, seconds, now + i * seconds))
 }
 
+/** Turn a downloaded audio clip (e.g. a competition question) into something you can play again and again. */
+export async function prepareClip(arrayBuffer) {
+  const buffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer)
+  const player = new Tone.Player(buffer).toDestination()
+  return {
+    play() {
+      player.stop()
+      player.start()
+    },
+    dispose: () => player.dispose(),
+  }
+}
+
 export function playResult(correct) {
   ;(correct ? rightSound : wrongSound).start()
 }
