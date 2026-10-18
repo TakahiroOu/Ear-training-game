@@ -35,6 +35,36 @@ def test_server_calculates_the_score(client):
     assert wrong.json()["session"]["mistakes"] == 2
 
 
+def test_wrong_octave_gives_half_points_and_no_mistakes(client):
+    session_id = client.post("/api/sessions").json()["id"]
+    response = answer(client, session_id, 3, ["C4", "E4", "G4"], ["C5", "E4", "G4"])
+    assert response.json()["result"] == "octave"
+    assert response.json()["correct"] is False
+    assert response.json()["session"]["points"] == 1  # 3 // 2
+    assert response.json()["session"]["mistakes"] == 0
+
+    stats = client.get("/api/me/stats").json()
+    assert stats["by_mode"] == [{"mode": 3, "answered": 1, "correct": 0, "octave": 1}]
+
+
+def test_answer_saves_the_key(client, db):
+    from app.models import Answer
+
+    session_id = client.post("/api/sessions").json()["id"]
+    response = client.post(
+        f"/api/sessions/{session_id}/answers",
+        json={"mode": 1, "key": "D-major", "question_notes": ["F#4"], "given_notes": ["F#4"]},
+    )
+    assert response.json()["result"] == "right"
+    assert db.query(Answer).one().key == "D-major"
+
+    bad = client.post(
+        f"/api/sessions/{session_id}/answers",
+        json={"mode": 1, "key": "H-major", "question_notes": ["C4"], "given_notes": ["C4"]},
+    )
+    assert bad.status_code == 422
+
+
 def test_game_ends_at_50_points_and_then_stays_closed(client):
     session_id = client.post("/api/sessions").json()["id"]
     chord = ["C4", "E4", "G4", "A#4"]
@@ -73,8 +103,8 @@ def test_stats(client):
     assert stats["games_played"] == 1
     assert stats["wins"] == 0
     assert stats["by_mode"] == [
-        {"mode": 1, "answered": 2, "correct": 1},
-        {"mode": 2, "answered": 2, "correct": 1},
+        {"mode": 1, "answered": 2, "correct": 1, "octave": 0},
+        {"mode": 2, "answered": 2, "correct": 1, "octave": 0},
     ]
     assert stats["most_missed_notes"][0] == {"note": "F#4", "missed": 2}
     assert stats["recent_sessions"][0]["id"] == session_id

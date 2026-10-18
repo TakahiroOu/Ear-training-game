@@ -8,7 +8,7 @@ from app.auth import CurrentUser, get_current_user
 from app.db import get_db
 from app.models import Answer, GameSession, Profile
 from app.schemas import AnswerIn, AnswerResult, SessionOut
-from app.scoring import MAX_MISTAKES, WIN_POINTS, is_correct, mistakes_for, points_for
+from app.scoring import MAX_MISTAKES, WIN_POINTS, classify, half_points_for, mistakes_for, points_for
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
@@ -49,9 +49,11 @@ def save_answer(
     if len(answer.question_notes) != answer.mode:
         raise HTTPException(422, "The number of question notes must match the mode")
 
-    correct = is_correct(answer.given_notes, answer.question_notes)
-    if correct:
+    result = classify(answer.given_notes, answer.question_notes)
+    if result == "right":
         session.points += points_for(answer.mode)
+    elif result == "octave":
+        session.points += half_points_for(answer.mode)  # and no mistake points
     else:
         session.mistakes += mistakes_for(answer.mode)
 
@@ -59,7 +61,8 @@ def save_answer(
         session.result = "won" if session.points >= WIN_POINTS else "lost"
         session.ended_at = func.now()
 
-    db.add(Answer(session_id=session.id, correct=correct, **answer.model_dump()))
+    correct = result == "right"
+    db.add(Answer(session_id=session.id, correct=correct, result=result, **answer.model_dump()))
     db.commit()
     db.refresh(session)
-    return AnswerResult(correct=correct, session=session)
+    return AnswerResult(correct=correct, result=result, session=session)

@@ -50,6 +50,8 @@ class Answer(Base):
     question_notes: Mapped[list[str]] = mapped_column(ARRAY(String(4)))
     given_notes: Mapped[list[str]] = mapped_column(ARRAY(String(4)))
     correct: Mapped[bool]
+    result: Mapped[str] = mapped_column(String(10))  # "right" | "octave" (right letters, wrong octave) | "wrong"
+    key: Mapped[str | None] = mapped_column(String(10))  # e.g. "D-major", or None when any note could be played
     response_ms: Mapped[int | None]  # time from hearing the question to checking
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 

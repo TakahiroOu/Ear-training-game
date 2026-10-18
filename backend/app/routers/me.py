@@ -34,10 +34,15 @@ def get_stats(user: CurrentUser = Depends(get_current_user), db: Session = Depen
         ).where(GameSession.user_id == user.id)
     ).one()
 
-    # Accuracy per mode:  SELECT mode, count(*), count(correct) ... GROUP BY mode
+    # Accuracy per mode:  SELECT mode, count(*), count(correct), count(octave) ... GROUP BY mode
     my_answers = select(Answer).join(GameSession).where(GameSession.user_id == user.id)
     by_mode = db.execute(
-        select(Answer.mode, func.count(), func.count(case((Answer.correct, 1))))
+        select(
+            Answer.mode,
+            func.count(),
+            func.count(case((Answer.correct, 1))),
+            func.count(case((Answer.result == "octave", 1))),
+        )
         .join(GameSession)
         .where(GameSession.user_id == user.id)
         .group_by(Answer.mode)
@@ -55,7 +60,7 @@ def get_stats(user: CurrentUser = Depends(get_current_user), db: Session = Depen
         games_played=games_played,
         wins=wins,
         losses=losses,
-        by_mode=[ModeStats(mode=m, answered=a, correct=c) for m, a, c in by_mode],
+        by_mode=[ModeStats(mode=m, answered=a, correct=c, octave=o) for m, a, c, o in by_mode],
         most_missed_notes=[MissedNote(note=n, missed=c) for n, c in missed.most_common(5)],
         recent_sessions=list(recent),
     )

@@ -4,9 +4,11 @@
 import { useRef, useState } from 'react'
 import { fetchQuestion, saveAnswer, startSession } from '../api/client.js'
 import { loadSounds, playNotes, playResult } from '../audio/sampler.js'
-import { MAX_MISTAKES, WIN_POINTS, isCorrect, mistakesFor, pointsFor } from './rules.js'
+import { tonicChord } from './keys.js'
+import { MAX_MISTAKES, WIN_POINTS, classifyAnswer, halfPointsFor, mistakesFor, pointsFor } from './rules.js'
 
 const SHOW_RESULT_BEFORE_END_MS = 1500
+const KEY_CHORD_BEFORE_QUESTION_MS = 1500
 
 /**
  * `auth` is { token, userId } of the logged-in player, or nulls for guests.
@@ -18,7 +20,9 @@ export function useGame(auth) {
   const [mode, setMode] = useState(null) // how many notes the current question has
   const [answer, setAnswer] = useState([]) // notes the server played
   const [selected, setSelected] = useState([]) // notes the player picked
-  const [result, setResult] = useState(null) // null until checked, then 'right' | 'wrong'
+  const [result, setResult] = useState(null) // null until checked, then 'right' | 'octave' | 'wrong'
+  const [key, setKey] = useState(null) // chosen key (調性) like 'D-major', or null for all 12 notes
+  const [questionKey, setQuestionKey] = useState(null) // the key the current question was made in
   const [points, setPoints] = useState(0)
   const [mistakes, setMistakes] = useState(0)
   const [error, setError] = useState(false)
@@ -27,6 +31,7 @@ export function useGame(auth) {
   // Not shown on screen, so kept in refs (changing a ref doesn't redraw the page)
   const savedGame = useRef(null) // { userId, id: Promise<session id> | null } of the game being saved
   const questionStartedAt = useRef(0)
+  const keyHeard = useRef(null) // the last key whose tonic chord was played
 
   const hasQuestion = answer.length > 0
   const gameOver = points >= WIN_POINTS || mistakes >= MAX_MISTAKES
@@ -48,14 +53,25 @@ export function useGame(auth) {
   async function newQuestion(nextMode) {
     if (gameOver) return
     try {
-      const notes = await fetchQuestion(nextMode)
+      const notes = await fetchQuestion(nextMode, key)
       setError(false)
       setMode(nextMode)
       setAnswer(notes)
+      setQuestionKey(key)
       setSelected([])
       setResult(null)
-      playNotes(notes)
-      questionStartedAt.current = Date.now()
+
+      const playQuestion = () => {
+        playNotes(notes)
+        questionStartedAt.current = Date.now()
+      }
+      if (key && keyHeard.current !== key) {
+        // New key: play its tonic chord first, so the player hears the key
+        hearKey()
+        setTimeout(playQuestion, KEY_CHORD_BEFORE_QUESTION_MS)
+      } else {
+        playQuestion()
+      }
     } catch {
       setError(true)
     }
@@ -74,23 +90,32 @@ export function useGame(auth) {
     if (hasQuestion) playNotes(answer)
   }
 
+  /** Play the tonic chord of the chosen key. */
+  function hearKey() {
+    if (!key) return
+    playNotes(tonicChord(key))
+    keyHeard.current = key
+  }
+
   function check() {
     // Fixes from the pygame version: you can't check before a question is played,
     // with nothing picked, or score the same question twice.
     if (!hasQuestion || result || selected.length === 0) return
 
-    const correct = isCorrect(selected, answer)
-    playResult(correct)
-    setResult(correct ? 'right' : 'wrong')
+    const checked = classifyAnswer(selected, answer)
+    playResult(checked !== 'wrong')
+    setResult(checked)
     save({
       mode,
+      key: questionKey,
       question_notes: answer,
       given_notes: selected,
       response_ms: Date.now() - questionStartedAt.current,
     })
 
-    if (correct) {
-      const newPoints = points + pointsFor(mode)
+    if (checked === 'right' || checked === 'octave') {
+      // Wrong octave: half the points, but no mistakes
+      const newPoints = points + (checked === 'right' ? pointsFor(mode) : halfPointsFor(mode))
       setPoints(newPoints)
       if (newPoints >= WIN_POINTS) endGame('won')
     } else {
@@ -137,6 +162,7 @@ export function useGame(auth) {
 
   return {
     screen, loading, mode, answer, selected, result, points, mistakes, error, saveFailed, hasQuestion,
-    start, newQuestion, pressKey, replay, check, playAgain,
+    key, questionKey, setKey,
+    start, newQuestion, pressKey, replay, hearKey, check, playAgain,
   }
 }

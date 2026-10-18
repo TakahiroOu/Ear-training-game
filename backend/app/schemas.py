@@ -5,14 +5,22 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.music import NOTE_NAMES
+from app.music import NOTE_NAMES, parse_key
 
 
 class AnswerIn(BaseModel):
     mode: int = Field(ge=1, le=4)
+    key: str | None = None
     question_notes: list[str]
     given_notes: list[str] = Field(max_length=len(NOTE_NAMES))
     response_ms: int | None = Field(default=None, ge=0)
+
+    @field_validator("key")
+    @classmethod
+    def key_must_exist(cls, key):
+        if key is not None:
+            parse_key(key)  # raises ValueError -> 422 with a clear message
+        return key
 
     @field_validator("question_notes", "given_notes")
     @classmethod
@@ -36,6 +44,7 @@ class SessionOut(BaseModel):
 
 class AnswerResult(BaseModel):
     correct: bool
+    result: str  # "right" | "octave" | "wrong"
     session: SessionOut
 
 
@@ -49,6 +58,7 @@ class ModeStats(BaseModel):
     mode: int
     answered: int
     correct: int
+    octave: int  # right letters, wrong octave
 
 
 class MissedNote(BaseModel):
