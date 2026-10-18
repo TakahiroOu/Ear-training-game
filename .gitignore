@@ -1,0 +1,10 @@
+# Secrets: never commit the real .env (copy .env.example instead)
+.env
+
+# Python
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Editors / OS
+.DS_Store
