@@ -30,7 +30,20 @@ services:
     volumes:
       - ./backend:/app # saving a .py file restarts the server automatically
     depends_on:
+      - db
       - db-test
+
+  # Development database on your computer. Its data is kept in the "db-data" volume,
+  # so it survives restarts. (Logins still come from Supabase; the Supabase database
+  # is used once the app is online.)
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eartraining
+    volumes:
+      - db-data:/var/lib/postgresql/data
 
   # Throwaway database used ONLY by the automated tests (pytest).
   # Its data lives in memory (tmpfs) and disappears when the container stops.
@@ -43,3 +56,6 @@ services:
       POSTGRES_DB: test
     tmpfs:
       - /var/lib/postgresql/data
+
+volumes:
+  db-data:

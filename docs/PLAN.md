@@ -108,6 +108,7 @@ Also fixed from the pygame version: ENTER before any question gave free points, 
   - `game_sessions` (id, user_id, mode, points, mistakes, result, started_at, ended_at)
   - `answers` (id, session_id, question_notes, given_notes, correct, response_ms) → powers "which notes do I miss most?"
 - **Security checklist**: Row Level Security is ON for every table, and the Supabase dashboard's "Security Advisor" shows no warnings. Email confirmation is on.
+- **Development database runs locally** (the `db` service in Docker Compose). The development computer's network blocks direct database connections to the internet, while Supabase *login* (HTTPS) works. So during development: logins come from the Supabase project `ear-training-dev` (Tokyo), and data is stored in the local `db`. Once online (Phase 6), `DATABASE_URL` points to the Supabase database, and migrations run from the server.
 - **Tests** use a throwaway local Postgres container (`db-test` service in Docker Compose), so tests never touch Supabase data.
 - Stats page: accuracy per note and per mode, streaks, a history chart (Recharts).
 - ✅ Done when a logged-in user's history survives a browser refresh and a server restart.
