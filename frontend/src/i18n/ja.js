@@ -80,6 +80,7 @@ export default {
 
   // コンテスト
   contestsNav: 'コンテスト',
+  friendsNav: '友だちと対戦',
   contest: {
     rankedTitle: 'ランキング戦（いつでも）',
     intro:
@@ -157,7 +158,12 @@ export default {
     roomCode: 'ルームコード',
     join: 'ルームに参加',
     lobbyTitle: 'ルームコード',
-    shareHint: 'このコードを友だちに伝えましょう。みんなは「コンテスト」→「ルームに参加」から入れます。',
+    shareHint: 'このコードを友だちに伝えましょう。みんなは「友だちと対戦」からコードを入力して参加できます。',
+    loginToPlay: '友だちと対戦するにはログインしてください。',
+    hostTitle: 'ルームを作る',
+    hostHint: '共有用のコードが表示されます。種類と目標得点を決めて、全員そろったらスタートします。',
+    joinTitle: '友だちのルームに参加',
+    joinHint: '友だちから聞いたコードを入力してください。',
     category: '種類',
     target: '目標得点',
     points: (n) => `${n}点`,

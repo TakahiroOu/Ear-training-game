@@ -702,3 +702,21 @@ kbd {
   background: #1e1e1e;
   color: var(--text);
 }
+
+/* play with friends: start page */
+.friends-start {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.friends-option {
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.friends-option h3 {
+  margin: 0 0 4px;
+}

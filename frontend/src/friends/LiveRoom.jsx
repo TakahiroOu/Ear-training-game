@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Piano from '../components/Piano.jsx'
 import { spellNote } from '../game/keys.js'
-import { signed } from './format.js'
+import { signed } from '../contests/format.js'
 import { useRoom } from './useRoom.js'
 
 const TARGETS = [500, 1000, 2000, 3000]
