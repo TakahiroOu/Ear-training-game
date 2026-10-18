@@ -7,8 +7,8 @@ Notes are numbered by their position in NOTE_NAMES (0 = C3 ... 35 = B5).
 A note's "pitch class" is its letter without the octave, as a number 0-11 (C=0, C#=1 ... B=11).
 """
 
+import random
 import re
-from random import choice
 
 NOTE_NAMES = [
     "C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3",
@@ -30,9 +30,13 @@ def pitch_class(index):
     return index % 12
 
 
-def make_octave(index):
+# Every function that picks randomly takes `rng`: the normal random module by default,
+# or a seeded random.Random(...) so a competition gives everyone the same questions.
+
+
+def make_octave(index, rng=random):
     """Keep the note, or move it one octave up or down (wrapping around C3..B5)."""
-    return (index + choice([0, 12, -12])) % len(NOTE_NAMES)
+    return (index + rng.choice([0, 12, -12])) % len(NOTE_NAMES)
 
 
 def to_names(indexes):
@@ -77,59 +81,59 @@ def notes_in(pitch_classes, indexes):
     return [i for i in indexes if pitch_class(i) in pitch_classes]
 
 
-def build_chord(root_pitch_class, chord_pitch_classes):
+def build_chord(root_pitch_class, chord_pitch_classes, rng=random):
     """Root in the middle octave, the other notes stacked above it, then each note's octave randomized."""
     root = next(i for i in MIDDLE_OCTAVE if pitch_class(i) == root_pitch_class)
     intervals = [(pc - root_pitch_class) % 12 for pc in chord_pitch_classes]
-    return [make_octave(root + interval) for interval in intervals]
+    return [make_octave(root + interval, rng) for interval in intervals]
 
 
 # ---------- questions ----------
 
-def make_1note(key=None):
+def make_1note(key=None, rng=random):
     pool = notes_in(note_scale(key), MIDDLE_OCTAVE) if key else MIDDLE_OCTAVE
-    return to_names([make_octave(choice(pool))])
+    return to_names([make_octave(rng.choice(pool), rng)])
 
 
-def make_2notes(key=None):
+def make_2notes(key=None, rng=random):
     """Two random notes that are never the same or right next to each other."""
     pool = notes_in(note_scale(key), MIDDLE_OCTAVE) if key else MIDDLE_OCTAVE
     while True:
-        note1 = make_octave(choice(pool))
-        note2 = make_octave(choice(pool))
+        note1 = make_octave(rng.choice(pool), rng)
+        note2 = make_octave(rng.choice(pool), rng)
         if abs(note1 - note2) > 1:
             return to_names([note1, note2])
 
 
-def make_3notes(key=None):
+def make_3notes(key=None, rng=random):
     """No key: a minor or major triad on a random root. With a key: a triad from that key."""
     if key:
-        chord = diatonic_chord(key, choice(range(7)), 3)
-        return to_names(build_chord(chord[0], chord))
-    root = choice(MIDDLE_OCTAVE)
-    third = choice([3, 4])  # minor (root, +3, +7) or major (root, +4, +7)
-    return to_names([make_octave(root), make_octave(root + third), make_octave(root + 7)])
+        chord = diatonic_chord(key, rng.choice(range(7)), 3)
+        return to_names(build_chord(chord[0], chord, rng))
+    root = rng.choice(MIDDLE_OCTAVE)
+    third = rng.choice([3, 4])  # minor (root, +3, +7) or major (root, +4, +7)
+    return to_names([make_octave(root, rng), make_octave(root + third, rng), make_octave(root + 7, rng)])
 
 
-def make_4notes(key=None):
+def make_4notes(key=None, rng=random):
     """No key: a dominant 7th or minor 7th chord. With a key: a seventh chord from that key."""
     if key:
-        chord = diatonic_chord(key, choice(range(7)), 4)
-        return to_names(build_chord(chord[0], chord))
-    root = choice(MIDDLE_OCTAVE)
-    third = choice([3, 4])  # minor 7th (root, +3, +7, +10) or dominant 7th (root, +4, +7, +10)
+        chord = diatonic_chord(key, rng.choice(range(7)), 4)
+        return to_names(build_chord(chord[0], chord, rng))
+    root = rng.choice(MIDDLE_OCTAVE)
+    third = rng.choice([3, 4])  # minor 7th (root, +3, +7, +10) or dominant 7th (root, +4, +7, +10)
     return to_names([
-        make_octave(root),
-        make_octave(root + third),
-        make_octave(root + 7),
-        make_octave(root + 10),
+        make_octave(root, rng),
+        make_octave(root + third, rng),
+        make_octave(root + 7, rng),
+        make_octave(root + 10, rng),
     ])
 
 
 QUESTION_MAKERS = {1: make_1note, 2: make_2notes, 3: make_3notes, 4: make_4notes}
 
 
-def make_question(mode, key=None):
+def make_question(mode, key=None, rng=random):
     if key:
         parse_key(key)  # fail early with a clear message for unknown keys
-    return QUESTION_MAKERS[mode](key)
+    return QUESTION_MAKERS[mode](key, rng)

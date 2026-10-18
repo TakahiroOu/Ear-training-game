@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from app.auth import CurrentUser, get_current_user
+from app.auth import CurrentUser, get_current_user, get_optional_user
 from app.db import get_db
 from app.main import app
 
@@ -42,7 +42,7 @@ def db(engine):
     with Session(engine) as session:
         yield session
     with engine.begin() as connection:  # empty the tables after each test
-        connection.execute(text("TRUNCATE profiles, game_sessions, answers, trainer_results RESTART IDENTITY CASCADE"))
+        connection.execute(text("TRUNCATE profiles, game_sessions, answers, trainer_results, competitions, competition_entries, competition_answers RESTART IDENTITY CASCADE"))
 
 
 @pytest.fixture
@@ -56,6 +56,7 @@ def login_as():
 
     def login(user):
         app.dependency_overrides[get_current_user] = lambda: user
+        app.dependency_overrides[get_optional_user] = lambda: user
 
     return login
 

@@ -29,6 +29,7 @@ services:
       TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@db-test:5432/test
     volumes:
       - ./backend:/app # saving a .py file restarts the server automatically
+      - ./sounds:/sounds:ro # piano samples for competition audio (read-only)
     depends_on:
       - db
       - db-test

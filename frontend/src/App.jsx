@@ -8,6 +8,7 @@ import Piano from './components/Piano.jsx'
 import RulesScreen from './components/RulesScreen.jsx'
 import ScoreBoard from './components/ScoreBoard.jsx'
 import StatsPage from './components/StatsPage.jsx'
+import ContestsPage from './contests/ContestsPage.jsx'
 import TrainerPage from './trainer/TrainerPage.jsx'
 import { spellNote } from './game/keys.js'
 import { useGame } from './game/useGame.js'
@@ -17,7 +18,7 @@ function App() {
   const auth = useAuth()
   const game = useGame({ token: auth.token, userId: auth.user?.id ?? null })
   const { t, language, setLanguage } = useLanguage()
-  const [page, setPage] = useState('play') // 'play' | 'trainer' | 'stats' | 'account'
+  const [page, setPage] = useState('play') // 'play' | 'trainer' | 'contests' | 'stats' | 'account'
 
   // Keyboard shortcuts, same as the pygame version: 1-4, Enter, Space.
   useEffect(() => {
@@ -62,6 +63,7 @@ function App() {
         <nav className="nav">
           {navButton('play', t.play)}
           {navButton('trainer', t.trainerNav)}
+          {navButton('contests', t.contestsNav)}
           {auth.user && navButton('stats', t.stats)}
           {auth.enabled && navButton('account', auth.user ? t.account : t.logIn)}
           <span className="nav-divider" />
@@ -81,6 +83,7 @@ function App() {
       {page === 'account' && <AccountPage t={t} auth={auth} onLoggedIn={() => setPage('play')} />}
       {page === 'stats' && auth.token && <StatsPage t={t} token={auth.token} />}
       {page === 'trainer' && <TrainerPage t={t} auth={auth} />}
+      {page === 'contests' && <ContestsPage t={t} language={language} auth={auth} />}
 
       {page === 'play' && game.screen === 'rules' && (
         <RulesScreen t={t} loading={game.loading} error={game.error} onStart={game.start} />

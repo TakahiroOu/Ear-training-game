@@ -48,6 +48,13 @@ def verify_token(token, get_key_client=get_jwks_client, legacy_secret=None):
     return jwt.decode(token, signing_key.key, algorithms=["ES256", "RS256"], audience="authenticated")
 
 
+def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+    """Like get_current_user, but guests get None instead of an error."""
+    if credentials is None:
+        return None
+    return get_current_user(credentials)
+
+
 def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
     """Use as `user: CurrentUser = Depends(get_current_user)` in routes that need a login."""
     if credentials is None:

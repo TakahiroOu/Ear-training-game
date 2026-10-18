@@ -190,6 +190,93 @@ h1 {
   color: #fff;
 }
 
+/* ---------- contests ---------- */
+.contest-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+
+.contest-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.contest-card p {
+  margin: 4px 0 0;
+}
+
+.contest-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.section-title {
+  margin-top: 28px;
+}
+
+.class-forms {
+  margin-bottom: 12px;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.inline-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.inline-form input,
+.inline-form select,
+.form input {
+  font-size: 1rem;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #1e1e1e;
+  color: var(--text);
+}
+
+.contest-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 0;
+  font-weight: 700;
+}
+
+.message-right {
+  color: var(--green);
+}
+
+.leaderboard th {
+  text-align: left;
+  padding: 6px 4px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.row-me td {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* ---------- stats ---------- */
 .stats h3 {
   margin: 20px 0 8px;

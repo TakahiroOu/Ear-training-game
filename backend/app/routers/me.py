@@ -2,13 +2,16 @@
 
 from collections import Counter
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import case, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import CurrentUser, get_current_user
 from app.db import get_db
 from app.models import Answer, GameSession, Profile, TrainerResult
+from app.routers.sessions import get_or_create_profile
 from app.schemas import MissedNote, ModeStats, ProfileOut, StatsOut
 
 router = APIRouter(prefix="/api/me", tags=["me"])
@@ -18,6 +21,24 @@ router = APIRouter(prefix="/api/me", tags=["me"])
 def get_me(user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
     profile = db.get(Profile, user.id)
     return ProfileOut(id=str(user.id), username=profile.username if profile else None, email=user.email)
+
+
+class UsernameIn(BaseModel):
+    # 2-20 letters (Japanese too), digits, _ or -
+    username: str = Field(pattern=r"^[\w-]{2,20}$")
+
+
+@router.patch("", response_model=ProfileOut)
+def set_username(body: UsernameIn, user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Choose the name shown on leaderboards."""
+    profile = get_or_create_profile(db, user)
+    profile.username = body.username
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "username_taken")
+    return ProfileOut(id=str(user.id), username=profile.username, email=user.email)
 
 
 @router.get("/stats", response_model=StatsOut)
