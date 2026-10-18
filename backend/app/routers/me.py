@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import CurrentUser, get_current_user
 from app.db import get_db
-from app.models import Answer, GameSession, Profile
+from app.models import Answer, GameSession, Profile, TrainerResult
 from app.schemas import MissedNote, ModeStats, ProfileOut, StatsOut
 
 router = APIRouter(prefix="/api/me", tags=["me"])
@@ -56,6 +56,13 @@ def get_stats(user: CurrentUser = Depends(get_current_user), db: Session = Depen
 
     recent = db.scalars(sessions.order_by(GameSession.started_at.desc(), GameSession.id.desc()).limit(10))
 
+    trainer_tests = db.scalars(
+        select(TrainerResult)
+        .where(TrainerResult.user_id == user.id)
+        .order_by(TrainerResult.created_at.desc(), TrainerResult.id.desc())
+        .limit(10)
+    )
+
     return StatsOut(
         games_played=games_played,
         wins=wins,
@@ -63,4 +70,5 @@ def get_stats(user: CurrentUser = Depends(get_current_user), db: Session = Depen
         by_mode=[ModeStats(mode=m, answered=a, correct=c, octave=o) for m, a, c, o in by_mode],
         most_missed_notes=[MissedNote(note=n, missed=c) for n, c in missed.most_common(5)],
         recent_sessions=list(recent),
+        trainer_tests=list(trainer_tests),
     )

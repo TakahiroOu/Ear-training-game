@@ -13,7 +13,11 @@ async function request(path, { token, method = 'GET', body } = {}) {
     headers,
     body: body ? JSON.stringify(body) : undefined,
   })
-  if (!response.ok) throw new Error(`Server error ${response.status}`)
+  if (!response.ok) {
+    const error = new Error(`Server error ${response.status}`)
+    error.status = response.status // e.g. 422 = the server didn't accept what we sent
+    throw error
+  }
   return response.json()
 }
 
@@ -37,6 +41,20 @@ export async function startSession(token) {
 /** Logged-in players: save one checked question. The server calculates the score itself. */
 export function saveAnswer(token, sessionId, answer) {
   return request(`/api/sessions/${sessionId}/answers`, { token, method: 'POST', body: answer })
+}
+
+/** Interval & chord trainer: a question that fits the settings. Returns { notes, answer }. */
+export function fetchTrainerQuestion(settings) {
+  const { intervals, triads, sevenths, inversions, low, high } = settings
+  return request('/api/trainer/question', {
+    method: 'POST',
+    body: { intervals, triads, sevenths, inversions, low, high },
+  })
+}
+
+/** Logged-in players: save a finished trainer test. */
+export function saveTrainerResult(token, result) {
+  return request('/api/trainer/results', { token, method: 'POST', body: result })
 }
 
 export function fetchStats(token) {

@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException, Query
 
 from app.music import make_question, parse_key
-from app.routers import me, sessions
+from app.routers import me, sessions, trainer
 
 app = FastAPI(title="Ear Training API")
 app.include_router(sessions.router)
 app.include_router(me.router)
+app.include_router(trainer.router)
 
 
 @app.get("/api/health")

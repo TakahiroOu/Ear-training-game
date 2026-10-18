@@ -66,6 +66,14 @@ class MissedNote(BaseModel):
     missed: int
 
 
+class TrainerTestOut(BaseModel):
+    total: int
+    correct: int
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class StatsOut(BaseModel):
     games_played: int
     wins: int
@@ -73,3 +81,4 @@ class StatsOut(BaseModel):
     by_mode: list[ModeStats]
     most_missed_notes: list[MissedNote]
     recent_sessions: list[SessionOut]
+    trainer_tests: list[TrainerTestOut]
