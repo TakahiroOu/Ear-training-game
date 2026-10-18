@@ -100,7 +100,7 @@ Also fixed from the pygame version: ENTER before any question gave free points, 
 - **Ready for two languages:** all text shown to players lives in `src/i18n/` (`en.js`, `ja.js`) instead of being written directly in components. Adding Japanese/English later (important for search engines, see section 5) then needs no component changes.
 - ✅ Done when the full game plays in Chrome and on your phone's browser over Wi‑Fi.
 
-### Phase 2 — Accounts, saved progress, stats (SQL arrives, with Supabase)
+### Phase 2 — Accounts, saved progress, stats (SQL arrives, with Supabase) ✅ finished
 - **Set up Supabase**: create a free account and **two projects**: `ear-training-dev` (for experimenting) and later `ear-training-prod` (real users). Put each project's URL, public "anon" key and database connection string in `.env`. The secret `service_role` key and the DB password stay **only** in the backend's `.env`. Never put them in frontend code or commit them to git.
 - **Login**: the frontend uses `@supabase/supabase-js` *only* for sign up / log in / log out / password reset. It sends the login token to FastAPI with each request, and `auth.py` verifies the token (JWT) and gets the user id. Guests can still play without an account.
 - Tables (created with Alembic migrations from the backend):
