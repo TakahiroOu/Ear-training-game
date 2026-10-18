@@ -277,6 +277,80 @@ h1 {
   font-weight: 700;
 }
 
+/* ---------- live rooms ---------- */
+.room-code {
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin: 0;
+}
+
+.live-scores {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 16px;
+}
+
+.live-scores li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.standings li {
+  font-size: 1.2rem;
+}
+
+.host-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.host-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.host-settings select {
+  font-size: 1rem;
+  min-height: 44px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #1e1e1e;
+  color: var(--text);
+}
+
+.live-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 16px;
+}
+
+.live-layout aside h3 {
+  margin: 16px 0 0;
+}
+
+@media (max-width: 700px) {
+  .live-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.feed {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+
 /* ---------- stats ---------- */
 .stats h3 {
   margin: 20px 0 8px;
