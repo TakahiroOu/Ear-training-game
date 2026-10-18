@@ -78,7 +78,7 @@ The existing `sounds/` folder becomes `frontend/public/sounds/` after conversion
 
 ## 3. Roadmap (build in phases, each phase gives you something that works)
 
-### Phase 0 — Setup (learning the tools)
+### Phase 0 — Setup (learning the tools) ✅ finished
 - Install: Node.js LTS, Python 3.12, Docker Desktop, VS Code extensions (ES7 React, Python).
 - Move `main.py` → `legacy/main.py`. Create `frontend/` with `npm create vite@latest frontend -- --template react`. Create `backend/` with FastAPI.
 - Convert WAV → MP3 with `ffmpeg` (a small script), about 20 MB down to about 2 MB.
@@ -96,6 +96,7 @@ The existing `sounds/` folder becomes `frontend/public/sounds/` after conversion
   - Keyboard shortcuts as before (1–4, ENTER, SPACE) **plus on-screen buttons** so it works on touch screens.
   - Rules screen and win/lose screen.
 - Improvement over the original: when the answer is wrong, show the correct keys in red/green. Your code has a `showing_correct` flag, but it's never used.
+- **Ready for two languages:** all text shown to players lives in `src/i18n/` (`en.js`, `ja.js`) instead of being written directly in components. Adding Japanese/English later (important for search engines, see section 5) then needs no component changes.
 - ✅ Done when the full game plays in Chrome and on your phone's browser over Wi‑Fi.
 
 ### Phase 2 — Accounts, saved progress, stats (SQL arrives, with Supabase)
@@ -119,7 +120,9 @@ The existing `sounds/` folder becomes `frontend/public/sounds/` after conversion
 - New table `user_progress` (user_id, mode, level, best_accuracy).
 
 ### Phase 4 — Competitions
+- All competitions are **free to enter** (see section 5 for why there are no paid entries).
 - **Daily challenge**: everyone gets the *same* 20 questions each day (generated from a seed such as the date). The score uses accuracy and speed. There's a daily and an all-time leaderboard.
+- **Weekly and monthly contests**: longer question sets with fixed start and end times. Winners get rankings, badges, titles and a "hall of fame" page. Later, prizes may come from sponsors (see section 5).
 - **Server-side grading**: in competition mode the browser receives the sounds to play but *not* the answer, and the server checks each answer. This prevents cheating.
 - **Class competitions** (good for music schools): a teacher creates a competition with a join code, students join, and a leaderboard for that group appears.
 - Tables: `competitions` (id, name, type, seed, starts_at, ends_at, join_code, created_by), `competition_entries` (competition_id, user_id, score, time_ms).
@@ -133,6 +136,27 @@ The existing `sounds/` folder becomes `frontend/public/sounds/` after conversion
 
 ### Phase 6 — Phone app
 See section 4.
+
+### Phase 7 — Be found on Google (SEO)
+- **Landing pages built ahead of time** (static HTML that Google can read, not only the JavaScript game): home, one page per mode, a "conservatory entrance-exam preparation" page, and the contest hall of fame. Each page gets its own title, description and share image.
+- **Japanese and English versions** of each page, with `hreflang` tags so Google shows the right language.
+- **Content that answers what people search for**, e.g. 「聴音 練習」「音大受験 聴音 対策」「和音 聞き取り」「絶対音感 トレーニング」, "ear training chords", "interval ear training". Each page includes a free mini-trainer.
+- **Technical basics**: fast loading, works well on phones, `sitemap.xml`, `robots.txt`, structured data (schema.org), and **Google Search Console** + Bing Webmaster Tools to see which searches bring people.
+- **Links from other sites**: tell music teachers, schools and YouTube creators about the app. Class competitions spread through teachers. Add a "share your result" button. No bought links, because Google penalizes them.
+- **App Store Optimization** once the phone apps exist: name, keywords and screenshots in both languages.
+
+### Phase 8 — Subscription
+- Free plan + paid plan (monthly / yearly). Which features are free or paid will be decided together later.
+- Also consider a **family plan** (parents pay for children) and a **teacher / school plan** (one payment for a whole class).
+- Web payments with **Stripe** (Stripe Checkout + Customer Portal; the backend listens to Stripe "webhooks" to switch a user's plan on and off). Card numbers never touch our server.
+- Phone apps: Apple / Google in-app purchase rules apply (they take 15–30%). One user account works with both web and app subscriptions.
+- New table: `subscriptions` (user_id, plan, status, provider, current_period_end).
+
+### Phase 9 — Ads (optional)
+- **Google AdSense** on the website, **AdMob** in the phone app. Only for free users, with **subscribers seeing no ads**.
+- Ads only in quiet places (results screen, menus). Never ads that play sound during listening exercises.
+- Child-safe ad settings if users under 13 are expected.
+- Expect small income (a few hundred yen per 1,000 page views), so ads mainly push users toward subscribing.
 
 ---
 
@@ -152,13 +176,27 @@ Rules to follow from Phase 1 so this stays easy:
 
 ---
 
-## 5. Verification (how to check each phase works)
+## 5. Growth & money — decisions and reasons
+
+| Idea | Decision | Why |
+|---|---|---|
+| Free competitions (daily / weekly / monthly) | ✅ Yes | Brings users back regularly and spreads the app through schools. |
+| **Paid entry with cash prizes** | ❌ No, at least for now | (1) Entry fees paid into a prize pot can count as **gambling** in many countries, and Japan is strict. (2) In Japan, even prizes you fund yourself are **capped by the prize law (景品表示法)** if only paying users can enter. (3) Many users are **minors** (conservatory applicants). (4) **Cheating can't be stopped**: a free pitch-detection app on a second phone names every note. (5) Apple and Google allow real-money contests only with licenses and in some countries. |
+| Prizes for contests | ⏳ Later, maybe | Only with **free entry** and prizes paid by us or a **sponsor** (music shops, instrument brands, exam-prep schools). **Ask a lawyer first.** |
+| Subscription (freemium) | ✅ Yes, Phase 8 | The standard and most reliable income for learning apps. |
+| Ads | ✅ Optional, Phase 9 | Low income unless traffic is large, and they can disturb listening. Use as "free with ads, subscribe to remove them". |
+| SEO | ✅ Yes, Phase 7 | Nobody can guarantee the #1 spot, but useful bilingual pages, technical basics and links from teachers and schools are what work. |
+
+Legal notes are warnings, not legal advice. Rules depend on the country, so check with a professional before taking money from users or giving prizes.
+
+---
+
+## 6. Verification (how to check each phase works)
 - `docker compose up --build`, then open `http://localhost:5173` (game) and `http://localhost:8000/docs` (try the API in the browser).
 - Backend tests: `docker compose exec backend pytest`. They check the chord generators, octave range (always within C3–B5), scoring, and the login flow.
 - Frontend: `npm run build` must succeed, and you play each mode manually on desktop Chrome and on a phone over the local network.
 - Phase 2 and later: restart the containers and confirm users and scores are still there (they live in Supabase, not in the containers). Security check: try to read a table with only the public anon key, for example with `supabase-js` in the browser console. It must return nothing.
 
-## 6. First steps once approved
-1. Save this plan to `docs/PLAN.md` and write the README.
-2. Do Phase 0 (folders, Docker Compose, converting sounds).
-3. Do Phase 1 and get your game playable in the browser.
+## 7. Order of work
+Phase 1 (game in the browser) → 2 (accounts) → 3 (modes) → 4 (free competitions) → 5 (online) → 7 (SEO) → 8 (subscription) → 6 (phone app) → 9 (ads).
+Earning money comes after there are users, so the game itself comes first.
