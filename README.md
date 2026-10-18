@@ -2,6 +2,14 @@
 
 A music ear-training game: listen to one or more notes, then pick them on the piano keyboard.
 
+## About the game
+
+This ear training game is designed for instrument learners, singers, and composers to practice music dictation, an essential musical skill, in a casual and accessible way.
+
+Players can freely choose to hear 1, 2, 3, or 4 piano notes and answer by clicking the on-screen keyboard. Points or mistake points are awarded depending on the selected difficulty level.
+
+The game ends when a player reaches 50 points (win) or 50 mistake points (lose).
+
 See the full roadmap and the reasons behind each technology in [docs/PLAN.md](docs/PLAN.md).
 
 ## Run the web app (in development)
@@ -68,9 +76,12 @@ cd frontend && npm test                # JavaScript: game rules
 
 ## Run the original pygame version
 
-From the project folder:
-
-```
-pip install pygame
-python legacy/main.py
-```
+1. Install Python (3.9 or later)
+2. Install pygame:
+   `pip install pygame`
+3. Download or clone this repository:
+   `git clone https://github.com/TakahiroOu/Ear-training-game.git`
+4. Move into the folder:
+   `cd Ear-training-game`
+5. Run the game:
+   `python legacy/main.py`
