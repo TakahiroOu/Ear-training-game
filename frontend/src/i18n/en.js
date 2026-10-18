@@ -80,6 +80,7 @@ export default {
 
   // contests
   contestsNav: 'Contests',
+  friendsNav: 'Play with friends',
   contest: {
     rankedTitle: 'Ranked play (anytime)',
     intro:
@@ -157,7 +158,12 @@ export default {
     roomCode: 'Room code',
     join: 'Join room',
     lobbyTitle: 'Room code',
-    shareHint: 'Share this code with your friends. Everyone opens Contests → Join room.',
+    shareHint: 'Share this code with your friends. They open “Play with friends” and join with it.',
+    loginToPlay: 'Log in to play with friends.',
+    hostTitle: 'Make a room',
+    hostHint: 'You get a code to share. You choose the type and the target score, and start when everyone is in.',
+    joinTitle: 'Join a friend’s room',
+    joinHint: 'Type the code your friend shared.',
     category: 'Type',
     target: 'Play to',
     points: (n) => `${n} points`,

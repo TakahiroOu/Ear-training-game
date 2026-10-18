@@ -2,18 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   closeCompetition,
   createClassCompetition,
-  createRoom,
   enterCompetition,
   fetchCompetitions,
-  fetchMe,
   findCompetitionByCode,
-  setUsername,
 } from '../api/client.js'
-import { loadSounds } from '../audio/sampler.js'
 import ContestPlay from './ContestPlay.jsx'
 import { contestTitle } from './format.js'
 import Leaderboard from './Leaderboard.jsx'
-import LiveRoom from './LiveRoom.jsx'
+import UsernameForm from './UsernameForm.jsx'
+import { readyToPlay } from './readyToPlay.js'
 
 const QUICK_COUNTS = [5, 10, 20, 50]
 
@@ -90,65 +87,6 @@ function ContestCard({ t, competition, loggedIn, onPlay, onLeaderboard, onClose 
           </button>
         )}
       </div>
-    </div>
-  )
-}
-
-function UsernameForm({ t, token, onSaved }) {
-  const [name, setName] = useState('')
-  const [error, setError] = useState(null)
-  const tc = t.contest
-
-  async function save(event) {
-    event.preventDefault()
-    try {
-      await setUsername(token, name.trim())
-      onSaved()
-    } catch (e) {
-      setError(e.detail === 'username_taken' ? tc.usernameTaken : tc.usernameHint)
-    }
-  }
-
-  return (
-    <section className="panel">
-      <h2>{tc.usernameTitle}</h2>
-      <form className="form" onSubmit={save}>
-        <input value={name} onChange={(e) => setName(e.target.value)} minLength={2} maxLength={20} required autoFocus />
-        <p className="muted small">{tc.usernameHint}</p>
-        <button type="submit" className="button button-primary">
-          {tc.save}
-        </button>
-      </form>
-      {error && <p className="message message-error">{error}</p>}
-    </section>
-  )
-}
-
-function LiveRoomForms({ t, onCreate, onJoin }) {
-  const tl = t.live
-  const [code, setCode] = useState('')
-  return (
-    <div className="class-forms">
-      <div className="inline-form">
-        <button type="button" className="button button-primary" onClick={onCreate}>
-          {tl.create}
-        </button>
-      </div>
-      <form
-        className="inline-form"
-        onSubmit={(event) => {
-          event.preventDefault()
-          onJoin(code.trim().toUpperCase())
-        }}
-      >
-        <label>
-          {tl.roomCode}
-          <input value={code} onChange={(e) => setCode(e.target.value)} maxLength={8} required />
-        </label>
-        <button type="submit" className="button">
-          {tl.join}
-        </button>
-      </form>
     </div>
   )
 }
@@ -239,7 +177,7 @@ export default function ContestsPage({ t, auth }) {
   const tc = t.contest
   const [lists, setLists] = useState(null)
   const [found, setFound] = useState(null) // a class competition found by its join code
-  const [view, setView] = useState({ name: 'list' }) // list | username | play | leaderboard | room
+  const [view, setView] = useState({ name: 'list' }) // list | username | play | leaderboard
   const [error, setError] = useState(null)
 
   const reload = useCallback(() => {
@@ -254,9 +192,7 @@ export default function ContestsPage({ t, auth }) {
   async function prepare(next) {
     setError(null)
     try {
-      await loadSounds()
-      const me = await fetchMe(auth.token)
-      if (!me.username) {
+      if (!(await readyToPlay(auth.token))) {
         setView({ name: 'username', then: next })
         return
       }
@@ -281,11 +217,6 @@ export default function ContestsPage({ t, auth }) {
       setError(t.serverError)
     }
   }
-
-  const openRoom = (getCode) =>
-    prepare(async () => {
-      setView({ name: 'room', code: await getCode() })
-    })
 
   const backToList = () => {
     setView({ name: 'list' })
@@ -314,9 +245,6 @@ export default function ContestsPage({ t, auth }) {
   if (view.name === 'leaderboard') {
     return <Leaderboard t={t} token={auth.token} competitionId={view.competitionId} onBack={backToList} />
   }
-  if (view.name === 'room') {
-    return <LiveRoom t={t} code={view.code} token={auth.token} onLeave={backToList} />
-  }
 
   const card = (competition) => (
     <ContestCard
@@ -337,16 +265,6 @@ export default function ContestsPage({ t, auth }) {
       {!auth.user && <p className="message message-info">{tc.loginToPlay}</p>}
       {error && <p className="message message-error">{error}</p>}
       {!lists ? <p className="muted">…</p> : lists.ranked.map(card)}
-
-      <h2 className="section-title">{t.live.title}</h2>
-      <p className="muted small">{t.live.intro}</p>
-      {auth.user && (
-        <LiveRoomForms
-          t={t}
-          onCreate={() => openRoom(async () => (await createRoom(auth.token)).code)}
-          onJoin={(code) => openRoom(async () => code)}
-        />
-      )}
 
       <h2 className="section-title">{tc.classesTitle}</h2>
       <p className="muted small">{tc.classesIntro}</p>
