@@ -1,8 +1,11 @@
 from fastapi import FastAPI, Query
 
 from app.music import make_question
+from app.routers import me, sessions
 
 app = FastAPI(title="Ear Training API")
+app.include_router(sessions.router)
+app.include_router(me.router)
 
 
 @app.get("/api/health")

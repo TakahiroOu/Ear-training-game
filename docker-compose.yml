@@ -8,6 +8,9 @@ services:
       - "5173:5173"
     environment:
       API_URL: http://backend:8000 # containers find each other by service name
+    env_file:
+      - path: .env # VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY (public values only)
+        required: false
     volumes:
       - ./frontend:/app # your code is shared live, so saving a file updates the page
       - /app/node_modules # ...but keep the container's own installed libraries
@@ -18,7 +21,25 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app # saving a .py file restarts the server automatically
+    env_file:
+      - path: .env # DATABASE_URL / SUPABASE_URL (see .env.example)
+        required: false
     environment:
       WATCHFILES_FORCE_POLLING: "true" # Windows folders don't report file changes to Docker
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@db-test:5432/test
+    volumes:
+      - ./backend:/app # saving a .py file restarts the server automatically
+    depends_on:
+      - db-test
+
+  # Throwaway database used ONLY by the automated tests (pytest).
+  # Its data lives in memory (tmpfs) and disappears when the container stops.
+  # Real data lives in Supabase.
+  db-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test
+    tmpfs:
+      - /var/lib/postgresql/data

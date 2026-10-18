@@ -29,10 +29,21 @@ To play on your phone: connect it to the same Wi‑Fi, find your PC's IP address
 (the "IPv4 Address", e.g. 192.168.1.20), and open `http://192.168.1.20:5173`.
 If it doesn't load, allow Docker / port 5173 in the Windows Firewall.
 
+## Accounts and the database (Supabase)
+
+Without setup, everyone plays as a guest. To turn on accounts and saved progress:
+
+1. Copy `.env.example` to `.env` and fill in the values from your Supabase project
+   (the comments in the file say where to find each one). `.env` is never committed.
+2. Restart: `docker compose up -d --force-recreate`
+3. Create the tables in Supabase: `docker compose exec backend alembic upgrade head`
+
+When a table changes later, a new file is added in `backend/alembic/versions/`, and step 3 applies it.
+
 ## Tests
 
 ```
-docker compose exec backend pytest     # Python: music logic + API
+docker compose exec backend pytest     # Python: music logic, API, saving games, login checks (uses a throwaway test database)
 cd frontend && npm test                # JavaScript: game rules
 ```
 

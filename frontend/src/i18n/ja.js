@@ -34,4 +34,38 @@ export default {
   win: 'あなたの勝ち！',
   lose: 'ゲームオーバー',
   playAgain: 'もう一度遊ぶ',
+
+  // メニュー
+  play: 'プレイ',
+  stats: '成績',
+  account: 'アカウント',
+  logIn: 'ログイン',
+  logOut: 'ログアウト',
+
+  // アカウント
+  accountTitle: 'ログイン / アカウント作成',
+  accountWhy: 'アカウントを作ると、ゲームの記録が保存され、上達の様子を確認できます。',
+  email: 'メールアドレス',
+  password: 'パスワード（6文字以上）',
+  signUp: 'アカウント作成',
+  loggedInAs: (email) => `${email} でログイン中`,
+  checkEmail: 'あと少し！届いたメールのリンクをクリックして登録を確認してから、ログインしてください。',
+  authError: (reason) => `うまくいきませんでした：${reason}`,
+  accountsNotReady: 'アカウント機能はまだ準備中です。ゲストとして遊べます。',
+  guestNote: 'ゲストとしてプレイ中。ログインすると記録が保存されます。',
+  saveFailed: '最後の解答を保存できませんでした。',
+
+  // 成績
+  statsTitle: 'あなたの成績',
+  gamesPlayed: 'ゲーム',
+  wins: '勝ち',
+  losses: '負け',
+  accuracyByMode: '正答率',
+  mostMissed: 'よく間違える音',
+  recentGames: '最近のゲーム',
+  resultWon: '勝ち',
+  resultLost: '負け',
+  resultUnfinished: '途中',
+  noStats: 'まだ保存された記録がありません。ログインしてプレイしてみましょう！',
+  statsError: '成績を読み込めませんでした。しばらくしてからもう一度お試しください。',
 }

@@ -1,4 +1,11 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
+# Database: SQLAlchemy talks to PostgreSQL (Supabase) through psycopg; Alembic changes the tables over time
+sqlalchemy==2.0.41
+psycopg[binary]==3.2.9
+alembic==1.16.1
+# Checks the login tokens that Supabase gives to the browser
+pyjwt[crypto]==2.10.1
+# Tests
 pytest==8.3.5
 httpx==0.28.1

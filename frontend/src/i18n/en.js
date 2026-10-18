@@ -34,4 +34,38 @@ export default {
   win: 'YOU WIN!',
   lose: 'YOU LOSE!',
   playAgain: 'Play again',
+
+  // menu
+  play: 'Play',
+  stats: 'Stats',
+  account: 'Account',
+  logIn: 'Log in',
+  logOut: 'Log out',
+
+  // account
+  accountTitle: 'Log in or create an account',
+  accountWhy: 'With an account, your games are saved and you can see your progress.',
+  email: 'Email',
+  password: 'Password (at least 6 characters)',
+  signUp: 'Create account',
+  loggedInAs: (email) => `Logged in as ${email}`,
+  checkEmail: 'Almost done! Check your email, click the link to confirm your account, then log in.',
+  authError: (reason) => `That didn't work: ${reason}`,
+  accountsNotReady: 'Accounts are not set up yet. You can still play as a guest.',
+  guestNote: 'Playing as a guest. Log in to save your progress.',
+  saveFailed: 'Your last answer could not be saved.',
+
+  // stats
+  statsTitle: 'Your progress',
+  gamesPlayed: 'games',
+  wins: 'wins',
+  losses: 'losses',
+  accuracyByMode: 'Accuracy',
+  mostMissed: 'Notes you miss most',
+  recentGames: 'Recent games',
+  resultWon: 'Won',
+  resultLost: 'Lost',
+  resultUnfinished: 'Unfinished',
+  noStats: 'No saved games yet. Play a game while logged in!',
+  statsError: 'Could not load your stats. Please try again later.',
 }
