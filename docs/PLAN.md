@@ -1,0 +1,164 @@
+# Ear Training Web App — Project Plan
+
+## Context
+
+You built a working ear-training game in Python/pygame ([main.py](../main.py)):
+- 36 piano samples C3–B5 in `sounds/`, plus `right_answer.wav` / `false_answer.wav`
+- Modes 1–4: one note, two notes, a major/minor triad, a 7th chord (dom7 / min7), each note moved to a random octave
+- The player clicks piano keys, presses ENTER to check and SPACE to replay. Correct answers add +1…+4 points and wrong ones add +4…+1 mistakes. The first side to reach 50 wins or loses.
+
+**The problem:** pygame only runs on a desktop where Python is installed, so nobody can play it in a browser or on a phone.
+**The goal:** turn it into a web app that anyone can open in a browser. Later it adds accounts, stats, difficulty levels, intervals and chords, an **entrance-exam mode** for students applying to a music conservatory (many notes at once), and **competitions**. After that it can be packaged as a phone app.
+
+---
+
+## 1. Technology stack and why each piece is used
+
+| Layer | Technology | Why |
+|---|---|---|
+| What the player sees (frontend) | **React + JavaScript** | Browsers only run JavaScript, so a web game *must* use JS, and Python can't run there. React lets you build the screen from small reusable pieces ("components") like `<Piano>`, `<Key>` and `<ScoreBoard>`. Your `MakePiano.draw_piano()` becomes a `<Piano>` component. React redraws a key automatically when its state changes (e.g. clicked → blue), so you don't need a manual redraw loop like `main_loop`. |
+| Playing sounds | **Tone.js** (built on the browser's Web Audio API) | It replaces `pygame.mixer`. It loads your WAV/MP3 samples and plays several notes at **exactly** the same moment, which chords need. You can ask it for notes by name (`"C#4"`). |
+| Development tools | **Node.js + npm + Vite** | Node runs JavaScript *outside* the browser. Here it isn't the game server. It powers the dev tools: `npm` installs libraries (like `pip`), and `Vite` runs a dev server that reloads instantly when you save. It also bundles your code for production. |
+| Server / API (backend) | **Python + FastAPI** | You already know Python, so you can reuse your music logic (`make_octave`, `make_3notes`, …) almost as-is, without pygame. The server creates questions, grades competition answers (so nobody can cheat by editing browser code), and manages accounts and scores. FastAPI is modern, fast, simple, and generates an interactive API test page at `/docs` automatically. |
+| Data storage | **Supabase** (hosted **PostgreSQL**) + **SQLAlchemy** (Python ↔ SQL) + **Alembic** (database changes over time) | SQL *is* necessary once you have users, scores, leaderboards and competitions. That data is naturally tables with relationships (a user has many game sessions, and a competition has many entries). SQL makes queries like "top 10 scores this week" one short statement. Supabase runs a real PostgreSQL database for you with automatic backups and HTTPS, and the free tier is enough for this project. Because it's normal Postgres, SQLAlchemy and Alembic work unchanged, and you could move to any other Postgres host later. |
+| Login / accounts | **Supabase Auth** | Sign-up, login, password hashing, email confirmation, password reset, and later "Sign in with Google". Writing these yourself is where beginners most often create security holes, so a well-tested service is **safer**. The browser logs in through Supabase and gets a token, and FastAPI checks that token on every request. |
+| Running everything | **Docker + Docker Compose** | The React dev server and the Python API each need their own setup. Docker puts each in a "container" with everything installed, and `docker compose up` starts them together with one command. It runs the same way on your PC, a friend's PC, or a cloud server. A small local Postgres container is used **only for automated tests**, so tests never touch real data. |
+| Phone app (later) | **PWA → Capacitor** | See section 4. You reuse the *same* React code for the phone app. |
+
+**How the parts talk to each other:**
+```
+Browser (React + Tone.js)  ──HTTP/JSON + login token──▶  FastAPI (Python)  ──SQL──▶  Supabase Postgres
+   plays sounds, draws piano                            makes questions, grades,     users, scores,
+        │                                               checks token, leaderboards   competitions
+        └──── login only ────▶  Supabase Auth  (gives the browser a login token)
+```
+
+**Safety rule:** the browser only uses Supabase to **log in**. It never reads or writes database tables directly, and all data goes through FastAPI. That keeps competition grading cheat-proof. It also avoids Supabase's most common security mistake: tables the public can read or change because "Row Level Security" was left off. As an extra safety net, Row Level Security is still **turned on for every table** with no public policies. FastAPI connects with the server-side database password, which is never put in frontend code.
+
+---
+
+## 2. Project folder structure
+
+```
+ear-training-app/
+├── docs/PLAN.md                 ← this plan
+├── README.md                    ← how to run the project
+├── docker-compose.yml           ← starts frontend + backend (+ test database)
+├── .env.example                 ← template for Supabase URL / keys / DB password (real .env is git-ignored, never committed)
+├── legacy/                      ← your original pygame game, kept for reference
+│   └── main.py
+├── frontend/                    (React, JavaScript, Node tooling)
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── public/sounds/           ← piano samples converted to .mp3 (WAVs total ~20 MB, too big for web)
+│   └── src/
+│       ├── main.jsx, App.jsx
+│       ├── components/  Piano.jsx, Key.jsx, ScoreBoard.jsx, ModeSelector.jsx, RulesScreen.jsx, GameOver.jsx
+│       ├── audio/       sampler.js     ← Tone.js wrapper (replaces AudioCreator's sound loading)
+│       ├── game/        useGame.js     ← game state: score, mistakes, selected keys (replaces class Game)
+│       ├── api/         client.js      ← calls to the backend
+│       └── pages/       Play, Login, Stats, Leaderboard, Competition
+└── backend/                     (Python)
+    ├── Dockerfile
+    ├── requirements.txt
+    ├── app/
+    │   ├── main.py              ← FastAPI app + routes
+    │   ├── music.py             ← YOUR logic ported: note names, make_octave, chord/interval generators
+    │   ├── models.py            ← SQL tables (SQLAlchemy)
+    │   ├── schemas.py           ← request/response shapes (Pydantic)
+    │   ├── auth.py              ← checks the Supabase login token, finds the current user
+    │   └── routers/  questions.py, users.py, sessions.py, competitions.py
+    ├── alembic/                 ← database migration scripts
+    └── tests/  test_music.py, test_api.py
+```
+
+The existing `sounds/` folder becomes `frontend/public/sounds/` after conversion. The empty `main.css` is replaced by the frontend's styles, and `images/` moves to `frontend/public/images/`.
+
+---
+
+## 3. Roadmap (build in phases, each phase gives you something that works)
+
+### Phase 0 — Setup (learning the tools)
+- Install: Node.js LTS, Python 3.12, Docker Desktop, VS Code extensions (ES7 React, Python).
+- Move `main.py` → `legacy/main.py`. Create `frontend/` with `npm create vite@latest frontend -- --template react`. Create `backend/` with FastAPI.
+- Convert WAV → MP3 with `ffmpeg` (a small script), about 20 MB down to about 2 MB.
+- Write `docker-compose.yml` with 2 services: `frontend` (port 5173) and `backend` (port 8000). There's no database yet, because Phase 1 doesn't need one.
+- ✅ Done when `docker compose up` shows the React start page and `localhost:8000/docs` shows FastAPI.
+
+### Phase 1 — Your current game, in the browser
+- **Backend** `music.py`: port `AudioCreator`'s logic without pygame, working with note *names/indices* only:
+  - `NOTE_NAMES` (C3…B5), `make_octave(index)`, `make_1note()`, `make_2notes()` (keeps your "not adjacent" rule), `make_3notes()` (major/minor triad), `make_4notes()` (dom7/min7).
+  - Route `GET /api/questions?mode=3` → `{"notes": ["E3","G#4","B4"]}`.
+- **Frontend**:
+  - `<Piano>`: 21 white + 15 black keys drawn with HTML/CSS (same layout as `draw_piano`), colored white/black → blue (selected) → green/red after checking.
+  - `sampler.js`: load the 36 samples with Tone.js and play a list of notes together.
+  - `useGame.js`: points / mistakes / current mode and the same scoring rules (+mode for correct, +(5−mode) for wrong, 50 wins/loses).
+  - Keyboard shortcuts as before (1–4, ENTER, SPACE) **plus on-screen buttons** so it works on touch screens.
+  - Rules screen and win/lose screen.
+- Improvement over the original: when the answer is wrong, show the correct keys in red/green. Your code has a `showing_correct` flag, but it's never used.
+- ✅ Done when the full game plays in Chrome and on your phone's browser over Wi‑Fi.
+
+### Phase 2 — Accounts, saved progress, stats (SQL arrives, with Supabase)
+- **Set up Supabase**: create a free account and **two projects**: `ear-training-dev` (for experimenting) and later `ear-training-prod` (real users). Put each project's URL, public "anon" key and database connection string in `.env`. The secret `service_role` key and the DB password stay **only** in the backend's `.env`. Never put them in frontend code or commit them to git.
+- **Login**: the frontend uses `@supabase/supabase-js` *only* for sign up / log in / log out / password reset. It sends the login token to FastAPI with each request, and `auth.py` verifies the token (JWT) and gets the user id. Guests can still play without an account.
+- Tables (created with Alembic migrations from the backend):
+  - `profiles` (id = Supabase user id, username, created_at). Supabase stores emails and passwords itself in `auth.users`, so **you never handle passwords**.
+  - `game_sessions` (id, user_id, mode, points, mistakes, result, started_at, ended_at)
+  - `answers` (id, session_id, question_notes, given_notes, correct, response_ms) → powers "which notes do I miss most?"
+- **Security checklist**: Row Level Security is ON for every table, and the Supabase dashboard's "Security Advisor" shows no warnings. Email confirmation is on.
+- **Tests** use a throwaway local Postgres container (`db-test` service in Docker Compose), so tests never touch Supabase data.
+- Stats page: accuracy per note and per mode, streaks, a history chart (Recharts).
+- ✅ Done when a logged-in user's history survives a browser refresh and a server restart.
+
+### Phase 3 — Difficulty levels, intervals and chords, conservatory exam mode
+- **Difficulty levels**: (1) white keys in one octave → (2) all 12 notes, one octave → (3) 3 octaves (current game) → (4) wider range. Unlocked by accuracy.
+- **Intervals mode**: two notes, answer by *name* (m3, P5, …) with answer buttons instead of the piano. Melodic (one after another) or harmonic (together).
+- **Chord quality mode**: major / minor / diminished / augmented / dom7 / maj7 / min7, plus inversions.
+- **Entrance exam mode** (for conservatory exams): 4–6 notes at once (clusters and chords in any voicing), wider range, a limited number of replays, and a timer. Answers are graded per note, so partial credit shows which notes were missed.
+- All generators live in `backend/app/music.py` with unit tests (e.g. "a minor triad is always root, +3, +7 semitones").
+- New table `user_progress` (user_id, mode, level, best_accuracy).
+
+### Phase 4 — Competitions
+- **Daily challenge**: everyone gets the *same* 20 questions each day (generated from a seed such as the date). The score uses accuracy and speed. There's a daily and an all-time leaderboard.
+- **Server-side grading**: in competition mode the browser receives the sounds to play but *not* the answer, and the server checks each answer. This prevents cheating.
+- **Class competitions** (good for music schools): a teacher creates a competition with a join code, students join, and a leaderboard for that group appears.
+- Tables: `competitions` (id, name, type, seed, starts_at, ends_at, join_code, created_by), `competition_entries` (competition_id, user_id, score, time_ms).
+- *Optional later*: live 1‑vs‑1 battles over WebSockets (FastAPI supports them).
+
+### Phase 5 — Go online
+- Use production Docker images (`npm run build` → static files served by Nginx, `uvicorn` for the API).
+- Simplest hosting for the two containers: **Render** or **Railway** (they run Docker containers; small projects start free or cheap). Alternative: one small VPS running `docker compose`. The database and login stay on Supabase (`ear-training-prod` project).
+- HTTPS is automatic on those hosts and on Supabase. Secrets go in the host's environment-variable settings. Supabase makes daily backups. Note that **free Supabase projects pause after about a week with no activity**, so upgrade to the paid plan once real users depend on it.
+- GitHub Actions: run backend tests and the frontend build on every push. Your repo is already on GitHub at TakahiroOu/Ear-training-game.
+
+### Phase 6 — Phone app
+See section 4.
+
+---
+
+## 4. Is it easy to make both a web version and a phone app? Yes, if you plan for it now
+
+Because the game is built in React, you can reuse almost all of it:
+1. **PWA (Progressive Web App)**: add a manifest + service worker (`vite-plugin-pwa`). Users tap "Add to Home Screen" and it opens like an app with an icon, full screen, and sounds cached offline. *A few hours of work.*
+2. **Capacitor**: wraps the same React build into real **Android and iOS apps** you can publish to Google Play and the App Store. *Mostly configuration, with almost no code changes.*
+   - Android: Google Play account ($25 once). iOS: Apple Developer account ($99/year), and building requires a Mac (or a cloud Mac build service).
+
+Rules to follow from Phase 1 so this stays easy:
+- Design for touch: big keys, on-screen buttons for everything that has a keyboard shortcut, and a layout that works at phone width (the piano scrolls or shows fewer octaves on small screens).
+- Start audio only after the first tap. Phones block sound until the user interacts, and Tone.js handles this with `Tone.start()`.
+- Keep all server calls in `api/client.js` with a configurable server URL.
+
+(Not recommended: rewriting the app in React Native or Flutter. That means writing a second app, which isn't worth it for this game.)
+
+---
+
+## 5. Verification (how to check each phase works)
+- `docker compose up --build`, then open `http://localhost:5173` (game) and `http://localhost:8000/docs` (try the API in the browser).
+- Backend tests: `docker compose exec backend pytest`. They check the chord generators, octave range (always within C3–B5), scoring, and the login flow.
+- Frontend: `npm run build` must succeed, and you play each mode manually on desktop Chrome and on a phone over the local network.
+- Phase 2 and later: restart the containers and confirm users and scores are still there (they live in Supabase, not in the containers). Security check: try to read a table with only the public anon key, for example with `supabase-js` in the browser console. It must return nothing.
+
+## 6. First steps once approved
+1. Save this plan to `docs/PLAN.md` and write the README.
+2. Do Phase 0 (folders, Docker Compose, converting sounds).
+3. Do Phase 1 and get your game playable in the browser.
