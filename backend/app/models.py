@@ -87,9 +87,9 @@ class Competition(Base):
     category: Mapped[str] = mapped_column(String(10), default="mixed")
     title: Mapped[str | None] = mapped_column(String(60))  # only for class competitions
     seed: Mapped[str] = mapped_column(String(40), unique=True)
-    question_count: Mapped[int]
+    question_count: Mapped[int]  # class competitions (ranked runs choose their own)
     starts_at: Mapped[datetime]
-    ends_at: Mapped[datetime]
+    ends_at: Mapped[datetime]  # class: far in the future until the creator closes it
     join_code: Mapped[str | None] = mapped_column(String(8), unique=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("profiles.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
@@ -104,6 +104,7 @@ class CompetitionEntry(Base):
     competition_id: Mapped[int] = mapped_column(ForeignKey("competitions.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
     seed: Mapped[str] = mapped_column(String(40))  # ranked: new for every run; class: the competition's seed
+    question_count: Mapped[int]  # ranked: chosen by the player; class: the competition's
     next_index: Mapped[int] = mapped_column(default=0)  # the question the player is on
     question_served_at: Mapped[datetime | None]  # when the current question's audio was first sent
     score: Mapped[int] = mapped_column(default=0)

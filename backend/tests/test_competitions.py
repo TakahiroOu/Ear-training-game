@@ -32,8 +32,8 @@ def play_question(client, db, entry_id, index, given=None):
     return client.post(f"/api/entries/{entry_id}/answers", json={"index": index, "given_notes": given})
 
 
-def play_run(client, db, competition_id, given=None):
-    entry = client.post(f"/api/competitions/{competition_id}/entries").json()
+def play_run(client, db, competition_id, given=None, questions=10):
+    entry = client.post(f"/api/competitions/{competition_id}/entries", json={"question_count": questions}).json()
     for index in range(entry["question_count"]):
         response = play_question(client, db, entry["id"], index, given)
     return response.json()["entry"]
@@ -53,16 +53,15 @@ def test_same_seed_same_questions():
 
 
 def test_speed_scoring():
-    # 1 note: fast within 3.5 s
-    assert rules.points_for("right", 1, 2000) == 150
-    assert rules.points_for("right", 1, 7000) == 100  # halfway between fast (3.5 s) and slow (10.5 s)
-    assert rules.points_for("right", 1, 30000) == 25  # very slow
-    # 4 notes: more time allowed, and a bigger gap between fast and slow
-    assert rules.points_for("right", 4, 8000) == 600
-    assert rules.points_for("right", 4, 60000) == 100
-    assert 600 - 100 > 150 - 25
+    one_note = [rules.points_for("right", 1, ms) for ms in [0, 500, 1000, 1500, 2000, 3000, 5000]]
+    assert one_note == [150, 130, 113, 99, 88, 69, 47]  # every split second counts
+    assert rules.points_for("right", 1, 60000) == 25  # very slow: ×0.25
+    # More notes: higher points, and the score shrinks more slowly
+    assert rules.points_for("right", 4, 0) == 600
+    assert rules.points_for("right", 4, 6500) == 350  # after one half-life (6.5 s): ×0.875
+    assert rules.points_for("right", 1, 2000) == 88  # 1 note: same ×0.875 already after 2 s
     # wrong octave: half; wrong: minus points
-    assert rules.points_for("octave", 2, 1000) == 150
+    assert rules.points_for("octave", 2, 0) == 150
     assert rules.points_for("wrong", 1, 1000) == -50
     assert rules.points_for("wrong", 4, 1000) == -200
 
@@ -99,16 +98,16 @@ def test_username_is_required_and_unique(client, login_as):
 def test_easy_run_is_all_single_notes_and_scores_speed(named, db):
     competition_id = ranked_id(named, "easy")
     entry = named.post(f"/api/competitions/{competition_id}/entries").json()
-    assert entry["next_mode"] == 1 and entry["question_count"] == 20
+    assert entry["next_mode"] == 1 and entry["question_count"] == 20  # 20 when not chosen
 
     audio = named.get(f"/api/entries/{entry['id']}/audio")
     assert audio.headers["content-type"] == "audio/wav" and audio.content[:4] == b"RIFF"
 
     first = play_question(named, db, entry["id"], 0).json()
-    assert first["result"] == "right" and first["points"] == 150  # answered within a second
+    assert first["result"] == "right" and 120 < first["points"] <= 150  # answered within a fraction of a second
     wrong = play_question(named, db, entry["id"], 1, given=WRONG[:1] + ["F3"]).json()
     assert wrong["result"] == "wrong" and wrong["points"] == -50
-    assert wrong["entry"]["score"] == 100
+    assert wrong["entry"]["score"] == first["points"] - 50
 
 
 def test_play_anytime_as_often_as_you_like(named, db):
@@ -159,9 +158,7 @@ def test_cheating_is_blocked(named, login_as):
 # ---------- API: class competitions ----------
 
 def test_class_competition_with_join_code(named, db, login_as):
-    created = named.post(
-        "/api/competitions", json={"title": "3年A組", "category": "easy", "question_count": 8, "days": 3}
-    ).json()
+    created = named.post("/api/competitions", json={"title": "3年A組", "category": "easy", "question_count": 8}).json()
     code = created["join_code"]
     assert len(code) == 6 and created["kind"] == "class" and created["category"] == "easy"
 
@@ -169,7 +166,7 @@ def test_class_competition_with_join_code(named, db, login_as):
     found = named.get(f"/api/competitions/code/{code.lower()}").json()  # codes are not case-sensitive
     assert found["title"] == "3年A組" and found["join_code"] is None  # only the creator sees the code
     named.patch("/api/me", json={"username": "student2"})
-    result = play_run(named, db, found["id"])
+    result = play_run(named, db, found["id"], questions=99)  # class: the competition's count is used
     assert result["finished"] and result["rank"] == 1 and result["question_count"] == 8
     # one attempt only
     again = named.post(f"/api/competitions/{found['id']}/entries")
@@ -186,3 +183,38 @@ def test_ended_class_competition_rejects_entries(named, db):
     db.add(competition)
     db.commit()
     assert named.post(f"/api/competitions/{competition.id}/entries").json()["detail"] == "This competition is not open"
+
+
+def test_choose_how_many_questions_and_rank_by_average(named, db, login_as):
+    competition_id = ranked_id(named, "easy")
+    short = play_run(named, db, competition_id, questions=2)
+    assert short["finished"] and short["question_count"] == 2
+    assert short["rank"] is None  # fewer than 10 questions: doesn't count for the leaderboard
+    assert named.post(f"/api/competitions/{competition_id}/entries", json={"question_count": 0}).status_code == 422
+    assert named.post(f"/api/competitions/{competition_id}/entries", json={"question_count": 101}).status_code == 422
+
+    play_run(named, db, competition_id, questions=10)  # all right
+    login_as(CurrentUser(id=uuid.uuid4(), email="hanako@example.com"))
+    named.patch("/api/me", json={"username": "hanako"})
+    play_run(named, db, competition_id, questions=30, given=WRONG)  # longer, but all wrong
+
+    board = named.get(f"/api/competitions/{competition_id}/leaderboard").json()
+    assert [(r["name"], r["question_count"]) for r in board["rows"]] == [("ピアノ太郎", 10), ("hanako", 30)]
+    assert board["rows"][0]["average"] > 100 and board["rows"][1]["average"] == -50.0
+
+
+def test_class_competition_stays_open_until_the_creator_closes_it(named, db, login_as, user):
+    created = named.post("/api/competitions", json={"title": "Piano club", "question_count": 5}).json()
+    assert created["active"] and created["is_mine"]
+    student = CurrentUser(id=uuid.uuid4(), email="student@example.org")
+    login_as(student)
+    assert named.post(f"/api/competitions/{created['id']}/close").status_code == 404  # not the creator
+
+    login_as(user)
+    closed = named.post(f"/api/competitions/{created['id']}/close").json()
+    assert closed["active"] is False
+    login_as(student)
+    named.patch("/api/me", json={"username": "student"})
+    entry = named.post(f"/api/competitions/{created['id']}/entries").json()
+    assert entry["detail"] == "This competition is not open"
+    assert named.get(f"/api/competitions/{created['id']}/leaderboard").status_code == 200  # results stay visible

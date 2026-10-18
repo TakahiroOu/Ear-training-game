@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchLeaderboard } from '../api/client.js'
-import { contestTitle, timeLeft } from './format.js'
+import { contestTitle } from './format.js'
 
 export default function Leaderboard({ t, token, competitionId, onBack }) {
   const [period, setPeriod] = useState('week') // ranked: 'week' or 'all'
@@ -18,13 +18,14 @@ export default function Leaderboard({ t, token, competitionId, onBack }) {
   if (!board) return <section className="panel muted">…</section>
 
   const ranked = board.competition.kind === 'ranked'
+  // Ranked runs have different lengths, so they're compared by average points per question
   const row = (r) => (
     <tr key={`${r.rank}-${r.name}`} className={r.is_me ? 'row-me' : ''}>
       <td>{r.rank}</td>
       <td>{r.name}</td>
-      <td>{r.score}</td>
-      <td>{r.correct}</td>
-      <td>{tc.seconds(r.total_ms)}</td>
+      <td>{ranked ? r.average : r.score}</td>
+      <td>{ranked ? r.question_count : r.correct}</td>
+      <td>{ranked ? tc.correctOf(r.correct, r.question_count) : tc.seconds(r.total_ms)}</td>
     </tr>
   )
 
@@ -36,8 +37,9 @@ export default function Leaderboard({ t, token, competitionId, onBack }) {
       <h2>{contestTitle(t, board.competition)}</h2>
       <p className="muted">
         {tc.players(board.competition.players)}
-        {!ranked && ` · ${timeLeft(t, board.competition)}`}
+        {!ranked && ` · ${board.competition.active ? tc.open : tc.closed}`}
       </p>
+      {ranked && <p className="muted small">{tc.rankedRule(board.competition.min_ranked_questions)}</p>}
       {ranked && (
         <div className="choice">
           {['week', 'all'].map((p) => (
@@ -60,9 +62,9 @@ export default function Leaderboard({ t, token, competitionId, onBack }) {
             <tr>
               <th>{tc.rank}</th>
               <th>{tc.name}</th>
-              <th>{ranked ? tc.bestScore : tc.scoreCol}</th>
-              <th>{tc.correctCol}</th>
-              <th>{tc.time}</th>
+              <th>{ranked ? tc.averageCol : tc.scoreCol}</th>
+              <th>{ranked ? tc.questionsCol : tc.correctCol}</th>
+              <th>{ranked ? tc.correctCol : tc.time}</th>
             </tr>
           </thead>
           <tbody>

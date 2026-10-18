@@ -172,10 +172,10 @@ New tables: `courses`, `enrollments` (user_id, course, plan_months, exam_date, s
 
 ### Phase 5 — Competitions ✅ core finished
 Built (changed after feedback on 2026-10-18):
-- **Ranked play, anytime**: Easy (20 single notes) and Mixed (20 questions, 1 → 4 notes). Play as often as you like with new questions each run; leaderboards show each player's best run, this week and all time. (The daily/weekly/monthly contests were removed.)
-- **Speed scoring**: 100 × notes × speed (×1.5 within 3.5 s for 1 note … 8 s for 4 notes, down to ×0.5 at three times that, ×0.25 when slower). Wrong octave: half. **Wrong answer: −50 × notes.** Ties go to the faster player.
+- **Ranked play, anytime**: Easy (single notes) and Mixed (1 → 4 notes). Play as often as you like, **choosing any number of questions (1–100)**, with new questions each run. Leaderboards compare each player's best **average points per question** (runs of 10+ questions count), this week and all time. (The daily/weekly/monthly contests were removed.)
+- **Speed scoring**: 100 × notes × speed. Speed starts at ×1.5 and shrinks smoothly every split second toward ×0.25, with a half-life of 2 s for 1 note, 3.5 s for 2, 5 s for 3, 6.5 s for 4 (1 note: 0.5 s → 130, 1 s → 113, 2 s → 88). Wrong octave: half. **Wrong answer: −50 × notes.** Ties go to the faster player.
 - **Live rooms with friends** (WebSockets): a host creates a room and shares its code (2–8 players). Everyone hears the same question at the same time; the first right answers score (1 scorer with 2–3 players, half the players with 4+; later ones get ×0.6, ×0.4, ×0.3). A wrong answer costs points and locks you out of that question. No fixed number of questions: the game ends when someone reaches the target score (500 / 1000 / 2000 / 3000), then the final ranking is shown. Rooms live in the server's memory (several servers would need Redis).
-- **Class competitions**: Easy or Mixed, one attempt each, same questions for everyone, 6-letter join code.
+- **Class competitions**: Easy or Mixed, any number of questions, one attempt each, same questions for everyone, 6-letter join code. Open until the creator closes it (no end date).
 - Cheating protection: the server mixes each question's audio (`backend/app/audio.py`), so browsers never get the note names before answering; it also times and grades answers.
 - Still to do: badges, titles, hall of fame; saving live-room results to stats.
 - All competitions are **free to enter** (see section 5 for why there are no paid entries).

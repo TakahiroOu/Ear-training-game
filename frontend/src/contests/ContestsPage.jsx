@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  closeCompetition,
   createClassCompetition,
   createRoom,
   enterCompetition,
@@ -10,37 +11,84 @@ import {
 } from '../api/client.js'
 import { loadSounds } from '../audio/sampler.js'
 import ContestPlay from './ContestPlay.jsx'
-import { contestTitle, timeLeft } from './format.js'
+import { contestTitle } from './format.js'
 import Leaderboard from './Leaderboard.jsx'
 import LiveRoom from './LiveRoom.jsx'
 
+const QUICK_COUNTS = [5, 10, 20, 50]
+
+/** Ranked runs: pick how many questions (any number from 1 to 100). */
+function QuestionCountPicker({ t, value, onChange }) {
+  const tc = t.contest
+  return (
+    <div className="count-picker">
+      <span>{tc.howMany}</span>
+      {QUICK_COUNTS.map((n) => (
+        <button
+          key={n}
+          type="button"
+          className={n === value ? 'button button-active' : 'button'}
+          onClick={() => onChange(n)}
+        >
+          {n}
+        </button>
+      ))}
+      <input
+        type="number"
+        min={1}
+        max={100}
+        value={value}
+        aria-label={tc.howMany}
+        onChange={(e) => onChange(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+      />
+    </div>
+  )
+}
+
 /** One competition in the list. */
-function ContestCard({ t, competition, loggedIn, onPlay, onLeaderboard }) {
+function ContestCard({ t, competition, loggedIn, onPlay, onLeaderboard, onClose }) {
   const tc = t.contest
   const ranked = competition.kind === 'ranked'
   const best = competition.my_best
   const open = competition.my_entry && !competition.my_entry.finished
   const canPlay = loggedIn && competition.active && (ranked || !best)
+  const [count, setCount] = useState(20)
   return (
     <div className="contest-card">
       <div>
         <h3>{contestTitle(t, competition)}</h3>
         <p className="muted small">
-          {ranked ? tc.categoryHint[competition.category] : timeLeft(t, competition)} ·{' '}
-          {tc.questions(competition.question_count)} · {tc.players(competition.players)}
+          {ranked
+            ? tc.categoryHint[competition.category]
+            : `${tc.questions(competition.question_count)} · ${competition.active ? tc.open : tc.closed}`}{' '}
+          · {tc.players(competition.players)}
         </p>
-        {competition.join_code && <p className="small">{tc.shareCode(competition.join_code)}</p>}
-        {best && <p className="win">{ranked ? tc.yourBest(best.score, best.rank) : tc.yourResult(best.score, best.rank)}</p>}
+        {competition.join_code && competition.active && <p className="small">{tc.shareCode(competition.join_code)}</p>}
+        {best &&
+          (ranked ? (
+            <p className="win">{tc.yourBest(best.average, best.rank)}</p>
+          ) : (
+            <p className="win">{tc.yourResult(best.score, best.rank)}</p>
+          ))}
+        {ranked && canPlay && !open && <QuestionCountPicker t={t} value={count} onChange={setCount} />}
+        {ranked && canPlay && !open && count < competition.min_ranked_questions && (
+          <p className="muted small">{tc.tooShortHint(competition.min_ranked_questions)}</p>
+        )}
       </div>
       <div className="contest-buttons">
         {canPlay && (
-          <button type="button" className="button button-primary" onClick={() => onPlay(competition)}>
+          <button type="button" className="button button-primary" onClick={() => onPlay(competition, count)}>
             {open ? tc.continue : tc.play}
           </button>
         )}
         <button type="button" className="button" onClick={() => onLeaderboard(competition.id)}>
           {tc.leaderboard}
         </button>
+        {competition.is_mine && competition.active && (
+          <button type="button" className="button" onClick={() => onClose(competition)}>
+            {tc.close}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -108,7 +156,7 @@ function LiveRoomForms({ t, onCreate, onJoin }) {
 function ClassCompetitionForms({ t, token, onFound, onCreated }) {
   const tc = t.contest
   const [code, setCode] = useState('')
-  const [form, setForm] = useState({ title: '', category: 'mixed', question_count: 20, days: 7 })
+  const [form, setForm] = useState({ title: '', category: 'mixed', question_count: 20 })
   const [message, setMessage] = useState(null)
 
   async function join(event) {
@@ -127,8 +175,7 @@ function ClassCompetitionForms({ t, token, onFound, onCreated }) {
       const created = await createClassCompetition(token, {
         ...form,
         title: form.title.trim(),
-        question_count: Number(form.question_count), // <select> values are text
-        days: Number(form.days),
+        question_count: Number(form.question_count), // form values are text
       })
       setMessage(tc.shareCode(created.join_code))
       setForm({ ...form, title: '' })
@@ -168,8 +215,17 @@ function ClassCompetitionForms({ t, token, onFound, onCreated }) {
           <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={60} required />
         </label>
         {select('category', [['easy', tc.categories.easy], ['mixed', tc.categories.mixed]], tc.categoryLabel)}
-        {select('question_count', [8, 12, 20, 30, 40].map((n) => [n, n]), tc.questionsLabel)}
-        {select('days', [1, 3, 7, 14, 30].map((n) => [n, n]), tc.daysLabel)}
+        <label>
+          {tc.questionsLabel}
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={form.question_count}
+            onChange={(e) => setForm({ ...form, question_count: e.target.value })}
+            required
+          />
+        </label>
         <button type="submit" className="button">
           {tc.create}
         </button>
@@ -210,11 +266,21 @@ export default function ContestsPage({ t, auth }) {
     }
   }
 
-  const play = (competition) =>
+  const play = (competition, questionCount) =>
     prepare(async () => {
-      const entry = await enterCompetition(auth.token, competition.id)
-      setView({ name: 'play', entry, competition })
+      const entry = await enterCompetition(auth.token, competition.id, questionCount)
+      setView({ name: 'play', entry, competition, questionCount })
     })
+
+  async function close(competition) {
+    if (!window.confirm(tc.closeConfirm)) return
+    try {
+      await closeCompetition(auth.token, competition.id)
+      reload()
+    } catch {
+      setError(t.serverError)
+    }
+  }
 
   const openRoom = (getCode) =>
     prepare(async () => {
@@ -239,7 +305,7 @@ export default function ContestsPage({ t, auth }) {
         entry={view.entry}
         title={contestTitle(t, view.competition)}
         ranked={view.competition.kind === 'ranked'}
-        onPlayAgain={() => play(view.competition)}
+        onPlayAgain={() => play(view.competition, view.questionCount)}
         onLeaderboard={() => showLeaderboard(view.competition.id)}
         onBack={backToList}
       />
@@ -260,6 +326,7 @@ export default function ContestsPage({ t, auth }) {
       loggedIn={Boolean(auth.user)}
       onPlay={play}
       onLeaderboard={showLeaderboard}
+      onClose={close}
     />
   )
 
