@@ -1,15 +1,268 @@
-body {
-  margin: 0;
-  font-family: system-ui, sans-serif;
-  background: #1e1e1e;
-  color: #ddd;
+:root {
+  --bg: #1e1e1e;
+  --panel: #2a2a2a;
+  --text: #ddd;
+  --muted: #999;
+  --accent: #ffc800;
+  --blue: #3b82f6;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #facc15;
 }
 
-main {
-  padding: 2rem;
-  text-align: center;
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ---------- header ---------- */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 h1 {
-  color: #ffc800;
+  margin: 0;
+  color: var(--accent);
+  font-size: clamp(1.5rem, 5vw, 2.4rem);
+  letter-spacing: 0.05em;
+}
+
+.language-switch {
+  display: flex;
+  gap: 8px;
+}
+
+.link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 4px;
+}
+
+.link-active {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+/* ---------- rules / game over ---------- */
+.panel {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-top: 20px;
+  line-height: 1.7;
+}
+
+.panel h2 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+}
+
+.panel ul {
+  margin: 0 0 16px;
+  padding-left: 1.2em;
+}
+
+.game-over {
+  text-align: center;
+}
+
+.game-over h2 {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+}
+
+.win {
+  color: var(--green);
+}
+
+.lose {
+  color: var(--red);
+}
+
+/* ---------- buttons ---------- */
+.button {
+  background: #3a3a3a;
+  color: var(--text);
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  min-height: 44px; /* big enough for a finger */
+}
+
+.button:hover:not(:disabled) {
+  background: #474747;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.button-active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.button-primary {
+  background: var(--accent);
+  color: #1e1e1e;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.button-primary:hover:not(:disabled) {
+  background: #ffd84d;
+}
+
+kbd {
+  font-family: inherit;
+  font-size: 0.75em;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0 4px;
+  opacity: 0.7;
+}
+
+/* keyboard hints are useless on touch screens */
+@media (pointer: coarse) {
+  kbd {
+    display: none;
+  }
+}
+
+/* ---------- play screen ---------- */
+.scoreboard {
+  display: flex;
+  justify-content: space-between;
+  margin: 16px 0;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  font-weight: 700;
+}
+
+.score-points {
+  color: var(--blue);
+}
+
+.score-mistakes {
+  color: var(--red);
+}
+
+.mode-selector,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mode-selector .button {
+  flex: 1 1 0;
+}
+
+.actions .button {
+  flex: 1 1 0;
+}
+
+.message {
+  min-height: 3em;
+  margin: 12px 0;
+}
+
+.message-right {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.message-wrong,
+.message-error {
+  color: var(--red);
+}
+
+.message-hint {
+  color: var(--muted);
+}
+
+/* ---------- piano ---------- */
+.piano-scroll {
+  overflow-x: auto; /* on narrow phones, swipe sideways to reach every key */
+  padding-bottom: 8px;
+}
+
+.piano {
+  position: relative;
+  height: clamp(180px, 35vw, 280px);
+  min-width: 640px;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.key {
+  position: absolute;
+  top: 0;
+  padding: 0 0 8px;
+  border: 1px solid #222;
+  border-radius: 0 0 6px 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transition: background-color 0.1s;
+}
+
+.key-white {
+  height: 100%;
+  background: #fff;
+  color: #555;
+}
+
+.key-black {
+  height: 58%;
+  background: #111;
+  color: #eee;
+  z-index: 1;
+}
+
+.key-label {
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+
+.key-selected {
+  background: var(--blue);
+  color: #fff;
+}
+
+.key-correct {
+  background: var(--green);
+  color: #fff;
+}
+
+.key-wrong {
+  background: var(--red);
+  color: #fff;
+}
+
+.key-missed {
+  background: var(--yellow);
+  color: #222;
 }
