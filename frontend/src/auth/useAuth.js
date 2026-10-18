@@ -14,7 +14,12 @@ export function useAuth() {
   }, [])
 
   async function signUp(email, password) {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      // The confirmation email links back to this site (localhost in development, the real address online)
+      options: { emailRedirectTo: window.location.origin },
+    })
     if (error) throw error
     // With email confirmation on, there's no session until the user clicks the link in the email
     return { needsConfirmation: !data.session }

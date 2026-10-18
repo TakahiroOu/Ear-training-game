@@ -40,6 +40,14 @@ Without setup, everyone plays as a guest. To turn on accounts and saved progress
 
 When a table changes later, a new file is added in `backend/alembic/versions/`, and step 3 applies it.
 
+## Online (Render + Supabase)
+
+- `render.yaml` describes the two online services: the website (free static site) and the API
+  (free Docker web service in Singapore, built from `backend/Dockerfile.prod`).
+- Every push to `main` is deployed automatically. The API runs the database migrations when it starts.
+- Secrets (database password etc.) are typed into Render's dashboard only, never into the code.
+- GitHub runs all tests on every push (`.github/workflows/tests.yml`).
+
 ## Tests
 
 ```

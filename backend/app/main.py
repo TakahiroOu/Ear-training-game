@@ -1,9 +1,19 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
+from app import config
 from app.music import make_question, parse_key
 from app.routers import competitions, me, rooms, sessions, trainer
 
 app = FastAPI(title="Ear Training API")
+if config.FRONTEND_ORIGINS:
+    # Browsers only let a website call an API on another address if the API allows it ("CORS")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=config.FRONTEND_ORIGINS,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 app.include_router(sessions.router)
 app.include_router(me.router)
 app.include_router(trainer.router)
