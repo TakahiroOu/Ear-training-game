@@ -1,0 +1,24 @@
+# Starts the whole app for development:  docker compose up --build
+#   Game (React):        http://localhost:5173
+#   API test page:       http://localhost:8000/docs
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      API_URL: http://backend:8000 # containers find each other by service name
+    volumes:
+      - ./frontend:/app # your code is shared live, so saving a file updates the page
+      - /app/node_modules # ...but keep the container's own installed libraries
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app # saving a .py file restarts the server automatically
+    environment:
+      WATCHFILES_FORCE_POLLING: "true" # Windows folders don't report file changes to Docker
