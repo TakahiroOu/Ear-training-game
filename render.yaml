@@ -10,6 +10,7 @@ services:
     plan: free
     region: singapore # the closest Render region to Japan
     branch: main
+    autoDeployTrigger: commit # every push to main goes online
     dockerContext: .
     dockerfilePath: ./backend/Dockerfile.prod
     healthCheckPath: /api/health
@@ -26,6 +27,7 @@ services:
     name: ear-training
     runtime: static
     branch: main
+    autoDeployTrigger: commit # every push to main goes online
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: ./frontend/dist
     envVars:
