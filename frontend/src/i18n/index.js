@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import en from './en.js'
 import ja from './ja.js'
 
@@ -19,6 +19,11 @@ function initialLanguage() {
 /** Returns the texts for the current language (`t`) and a way to switch language. */
 export function useLanguage() {
   const [language, setLanguageState] = useState(initialLanguage)
+
+  // Tell the browser (and screen readers, translators, search engines) which language the page shows
+  useEffect(() => {
+    document.documentElement.lang = language
+  }, [language])
 
   function setLanguage(next) {
     setLanguageState(next)
