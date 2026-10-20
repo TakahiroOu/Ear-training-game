@@ -19,7 +19,7 @@ services:
         sync: false
       - key: SUPABASE_URL # https://<production project id>.supabase.co
         sync: false
-      - key: FRONTEND_ORIGINS # the website's address, e.g. https://ear-training.onrender.com
+      - key: FRONTEND_ORIGINS # the website's address, e.g. https://chouon-training.com,https://ear-training-xlhd.onrender.com
         sync: false
 
   # The website (React, built into plain files). Static sites are free and never sleep.
