@@ -1,13 +1,71 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ear Training</title>
+
+    <!-- What search engines show in their results -->
+    <title>聴音トレーニング｜無料の聴音・音感トレーニングゲーム（Ear Training）</title>
+    <meta
+      name="description"
+      content="無料でできる聴音トレーニングゲーム。単音・2音・和音を聴いて鍵盤で答える練習、インターバル・和音の聴き分け、ランキング戦や友だちとの対戦も。音大受験の聴音対策にも。Free ear training game: notes, intervals and chords."
+    />
+    <link rel="canonical" href="https://ear-training-xlhd.onrender.com/" />
+
+    <!-- How the link looks when shared on LINE, X, Facebook, ... -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="聴音トレーニング｜無料の聴音・音感トレーニングゲーム" />
+    <meta
+      property="og:description"
+      content="単音・和音を聴いて鍵盤で答える無料の聴音ゲーム。ランキング戦や友だちとのライブ対戦も。"
+    />
+    <meta property="og:url" content="https://ear-training-xlhd.onrender.com/" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta name="twitter:card" content="summary" />
+
+    <!-- Structured data: tells search engines this is a free educational web app -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "聴音トレーニング (Ear Training)",
+        "url": "https://ear-training-xlhd.onrender.com/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any (web browser)",
+        "inLanguage": ["ja", "en"],
+        "description": "無料の聴音・音感トレーニングゲーム。単音・和音・インターバルの聴き取り、ランキング戦、友だちとの対戦。A free ear training game for notes, intervals and chords.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Written into the page itself (not built by JavaScript), so search engines always read it -->
+    <footer class="site-about">
+      <section lang="ja">
+        <h2>聴音トレーニングとは</h2>
+        <p>
+          ピアノの音を聴いて、鍵盤で答える無料の聴音・音感トレーニングゲームです。1音から4音（和音・七の和音）まで選べて、
+          調性を選んでその調の音や和音だけを練習することもできます。音大受験の聴音対策や、楽器・歌・作曲の耳を鍛える練習に。
+        </p>
+        <ul>
+          <li>プレイ：聴こえた音を鍵盤で答える聴音ゲーム（オクターブ違いも判定）</li>
+          <li>トレーナー：インターバル（短二度〜オクターブ）、三和音、七の和音、転回形の聴き分け</li>
+          <li>コンテスト：いつでも挑戦できるランキング戦（かんたん・ミックス）、クラスのコンテスト</li>
+          <li>友だちと対戦：同じ問題を同時に聴いて、早く正解した人が得点するライブ対戦</li>
+        </ul>
+      </section>
+      <section lang="en">
+        <h2>About Ear Training</h2>
+        <p>
+          A free ear training game: listen to piano notes and chords and find them on the keyboard. Practice single
+          notes, intervals, triads and seventh chords, play ranked runs anytime, or compete live with friends.
+        </p>
+      </section>
+    </footer>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
