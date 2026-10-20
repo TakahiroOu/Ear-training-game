@@ -186,7 +186,8 @@ Built (changed after feedback on 2026-10-18):
 - Tables: `competitions` (id, name, type, seed, starts_at, ends_at, join_code, created_by), `competition_entries` (competition_id, user_id, score, time_ms).
 - *Optional later*: live 1‑vs‑1 battles over WebSockets (FastAPI supports them).
 
-### Phase 6 — Go online
+### Phase 6 — Go online ✅ online since 2026-10-20
+Live at **https://ear-training-xlhd.onrender.com** (website: Render static site, free) with the API at https://ear-training-api.onrender.com (Render free web service, Singapore; sleeps after 15 min idle) and the Supabase production project `vnaiernisqutovohyirg` (Tokyo) for logins and data. Every push to `main` deploys automatically; development continues on the `web-app` branch.
 - Use production Docker images (`npm run build` → static files served by Nginx, `uvicorn` for the API). The backend image must include the WAV samples (`sounds/`), which competitions use, and the frontend bundle should be split (Vite warns it is over 500 kB).
 - Simplest hosting for the two containers: **Render** or **Railway** (they run Docker containers; small projects start free or cheap). Alternative: one small VPS running `docker compose`. The database and login stay on Supabase (`ear-training-prod` project).
 - HTTPS is automatic on those hosts and on Supabase. Secrets go in the host's environment-variable settings. Supabase makes daily backups. Note that **free Supabase projects pause after about a week with no activity**, so upgrade to the paid plan once real users depend on it.
