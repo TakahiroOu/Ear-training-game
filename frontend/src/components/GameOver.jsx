@@ -1,3 +1,5 @@
+import ShareButtons from './ShareButtons.jsx'
+
 export default function GameOver({ t, won, points, mistakes, onPlayAgain }) {
   return (
     <section className="panel game-over">
@@ -8,6 +10,7 @@ export default function GameOver({ t, won, points, mistakes, onPlayAgain }) {
       <button type="button" className="button button-primary" onClick={onPlayAgain}>
         {t.playAgain}
       </button>
+      <ShareButtons t={t} text={won ? t.share.gameWon(points) : t.share.gamePlayed(points)} />
     </section>
   )
 }

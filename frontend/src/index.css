@@ -49,6 +49,17 @@ body {
   margin: 4px 0;
 }
 
+.site-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0;
+}
+
+.site-links a {
+  color: #8ab4ff;
+}
+
 /* ---------- header ---------- */
 .header {
   display: flex;
@@ -199,17 +210,6 @@ h1 {
   margin-top: 12px;
 }
 
-.button-correct {
-  background: var(--green);
-  border-color: var(--green);
-  color: #fff;
-}
-
-.button-wrong {
-  background: var(--red);
-  border-color: var(--red);
-  color: #fff;
-}
 
 /* ---------- contests ---------- */
 .contest-card {
@@ -740,4 +740,39 @@ kbd {
 
 .friends-option h3 {
   margin: 0 0 4px;
+}
+
+/* Right / wrong answer buttons. At the end of the file and with :hover included,
+   so the colors win over the normal and hover button styles above. */
+.button.button-correct,
+.button.button-correct:hover:not(:disabled) {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.button.button-wrong,
+.button.button-wrong:hover:not(:disabled) {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+/* share buttons on result screens */
+.share {
+  margin-top: 20px;
+}
+
+.share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.share-buttons a.button {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }

@@ -254,4 +254,18 @@ export default {
     },
     inversions: ['root position', '1st inversion', '2nd inversion', '3rd inversion'],
   },
+
+  // share buttons
+  share: {
+    title: 'Share your result',
+    share: 'Share…',
+    copy: 'Copy',
+    copied: 'Copied!',
+    copyManually: 'Copy this text:',
+    gameWon: (points) => `I reached ${points} points and won at 聴音トレーニング (Ear Training)! 🎹 #聴音トレーニング`,
+    gamePlayed: (points) => `I played 聴音トレーニング (Ear Training) and scored ${points} points! 🎹 #聴音トレーニング`,
+    ranked: (title, count, average) => `${title} (${count} questions) on 聴音トレーニング: ${average} points per question! 🎹 #聴音トレーニング`,
+    classResult: (title, score, rank) => `I scored ${score} points${rank ? ` and placed #${rank}` : ''} in "${title}" on 聴音トレーニング! 🎹 #聴音トレーニング`,
+    live: (rank, players, score) => `I placed #${rank} of ${players} (${score} points) in a live ear training battle! 🎹 #聴音トレーニング`,
+  },
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Piano from '../components/Piano.jsx'
+import ShareButtons from '../components/ShareButtons.jsx'
 import { spellNote } from '../game/keys.js'
 import { signed } from '../contests/format.js'
 import { useRoom } from './useRoom.js'
@@ -71,11 +72,14 @@ export default function LiveRoom({ t, code, token, onLeave }) {
 
   // ---------- final ranking ----------
   if (room.state === 'finished') {
+    const finalOrder = standings ?? room.players.map((p) => ({ player: p.id, name: p.name, score: p.score }))
+    const myIndex = finalOrder.findIndex((s) => s.player === me)
+    const myPlace = myIndex >= 0 ? { rank: myIndex + 1, score: finalOrder[myIndex].score } : null
     return (
       <section className="panel game-over">
         <h2>{tl.finished}</h2>
         <ol className="live-scores standings">
-          {(standings ?? room.players.map((p) => ({ player: p.id, name: p.name, score: p.score }))).map((s, i) => (
+          {finalOrder.map((s, i) => (
             <li key={s.player} className={s.player === me ? 'row-me' : ''}>
               <span>
                 {MEDALS[i] ?? `${i + 1}.`} {s.name}
@@ -95,6 +99,7 @@ export default function LiveRoom({ t, code, token, onLeave }) {
           </button>
         </div>
         {live.error && <p className="message message-error">{tl.errors[live.error] ?? live.error}</p>}
+        {myPlace && <ShareButtons t={t} text={t.share.live(myPlace.rank, room.players.length, myPlace.score)} />}
       </section>
     )
   }

@@ -254,4 +254,18 @@ export default {
     },
     inversions: ['基本形', '第1転回形', '第2転回形', '第3転回形'],
   },
+
+  // シェア
+  share: {
+    title: '結果をシェア',
+    share: 'シェア…',
+    copy: 'コピー',
+    copied: 'コピーしました',
+    copyManually: 'この文章をコピーしてください：',
+    gameWon: (points) => `聴音トレーニングで${points}点を取ってクリアしました！🎹 #聴音トレーニング`,
+    gamePlayed: (points) => `聴音トレーニングに挑戦して${points}点でした！🎹 #聴音トレーニング`,
+    ranked: (title, count, average) => `聴音トレーニングの${title}（${count}問）で、1問平均${average}点でした！🎹 #聴音トレーニング`,
+    classResult: (title, score, rank) => `聴音トレーニングの「${title}」で${score}点${rank ? `、${rank}位` : ''}でした！🎹 #聴音トレーニング`,
+    live: (rank, players, score) => `聴音トレーニングの友だち対戦で、${players}人中${rank}位（${score}点）でした！🎹 #聴音トレーニング`,
+  },
 }

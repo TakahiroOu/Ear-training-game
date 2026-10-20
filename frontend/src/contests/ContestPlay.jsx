@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Piano from '../components/Piano.jsx'
+import ShareButtons from '../components/ShareButtons.jsx'
 import { spellNote } from '../game/keys.js'
 import { signed } from './format.js'
 import { useContestPlay } from './useContestPlay.js'
@@ -65,6 +66,14 @@ export default function ContestPlay({ t, token, entry: startEntry, title, ranked
             {tc.back}
           </button>
         </div>
+        <ShareButtons
+          t={t}
+          text={
+            ranked
+              ? t.share.ranked(title, entry.question_count, (entry.score / entry.question_count).toFixed(1))
+              : t.share.classResult(title, entry.score, entry.rank)
+          }
+        />
       </section>
     )
   }
