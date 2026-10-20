@@ -193,7 +193,8 @@ Live at **https://ear-training-xlhd.onrender.com** (website: Render static site,
 - HTTPS is automatic on those hosts and on Supabase. Secrets go in the host's environment-variable settings. Supabase makes daily backups. Note that **free Supabase projects pause after about a week with no activity**, so upgrade to the paid plan once real users depend on it.
 - GitHub Actions: run backend tests and the frontend build on every push. Your repo is already on GitHub at TakahiroOu/Ear-training-game.
 
-### Phase 7 — Be found on Google (SEO)
+### Phase 7 — Be found on Google (SEO) — in progress
+Done (2026-10-20): Japanese/English titles and descriptions, structured data, robots.txt + sitemap.xml, Google Search Console verified and sitemap submitted, an about section in index.html, 6 guide pages with mini-trainers (/choon-taisaku/, /waon-kikiwake/, /ontei-training/ and English versions under /en/), share buttons (X, LINE, copy, phone share menu) on result screens. Next: own domain (chouon-training.com was free; change VITE_SITE_URL in frontend/.env.production, public/sitemap.xml, public/robots.txt, FRONTEND_ORIGINS on Render and the Supabase URLs), Bing Webmaster Tools.
 - **Landing pages built ahead of time** (static HTML that Google can read, not only the JavaScript game): home, one page per mode, a "conservatory entrance-exam preparation" page, and the contest hall of fame. Each page gets its own title, description and share image.
 - **Japanese and English versions** of each page, with `hreflang` tags so Google shows the right language.
 - **Content that answers what people search for**, e.g. 「聴音 練習」「音大受験 聴音 対策」「和音 聞き取り」「絶対音感 トレーニング」, "ear training chords", "interval ear training". Each page includes a free mini-trainer.

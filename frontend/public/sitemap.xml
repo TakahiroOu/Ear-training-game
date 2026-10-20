@@ -1,9 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- The list of pages search engines should know about. Add new pages here (e.g. landing pages in Phase 7). -->
+<!-- The list of pages search engines should know about. Add new pages here and in vite.config.js. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ear-training-xlhd.onrender.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ear-training-xlhd.onrender.com/choon-taisaku/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ear-training-xlhd.onrender.com/waon-kikiwake/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ear-training-xlhd.onrender.com/ontei-training/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ear-training-xlhd.onrender.com/en/dictation-exam-prep/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ear-training-xlhd.onrender.com/en/chord-ear-training/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ear-training-xlhd.onrender.com/en/interval-ear-training/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>
