@@ -106,7 +106,7 @@ function App() {
             onChange={game.setKey}
             onHearKey={game.hearKey}
           />
-          <ModeSelector t={t} currentMode={game.mode} onChoose={game.newQuestion} />
+          <ModeSelector t={t} currentMode={game.mode} locked={game.questionOpen} onChoose={game.newQuestion} />
 
           <div className="actions">
             <button type="button" className="button" disabled={!game.hasQuestion} onClick={game.replay}>
