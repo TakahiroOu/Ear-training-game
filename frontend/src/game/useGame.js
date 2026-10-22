@@ -32,8 +32,10 @@ export function useGame(auth) {
   const savedGame = useRef(null) // { userId, id: Promise<session id> | null } of the game being saved
   const questionStartedAt = useRef(0)
   const keyHeard = useRef(null) // the last key whose tonic chord was played
+  const questionLoading = useRef(false) // a question is being fetched (ignore extra clicks)
 
   const hasQuestion = answer.length > 0
+  const questionOpen = hasQuestion && !result // played but not answered yet
   const gameOver = points >= WIN_POINTS || mistakes >= MAX_MISTAKES
 
   async function start() {
@@ -51,7 +53,9 @@ export function useGame(auth) {
   }
 
   async function newQuestion(nextMode) {
-    if (gameOver) return
+    // A question must be answered (答え合わせ) before the next one: pressing 1-4 again can't skip it
+    if (gameOver || questionOpen || questionLoading.current) return
+    questionLoading.current = true
     try {
       const notes = await fetchQuestion(nextMode, key)
       setError(false)
@@ -74,6 +78,8 @@ export function useGame(auth) {
       }
     } catch {
       setError(true)
+    } finally {
+      questionLoading.current = false
     }
   }
 
@@ -161,7 +167,7 @@ export function useGame(auth) {
   }
 
   return {
-    screen, loading, mode, answer, selected, result, points, mistakes, error, saveFailed, hasQuestion,
+    screen, loading, mode, answer, selected, result, points, mistakes, error, saveFailed, hasQuestion, questionOpen,
     key, questionKey, setKey,
     start, newQuestion, pressKey, replay, hearKey, check, playAgain,
   }

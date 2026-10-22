@@ -589,6 +589,13 @@ kbd {
   color: var(--text);
 }
 
+.mode-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
 .mode-selector,
 .actions {
   display: flex;
