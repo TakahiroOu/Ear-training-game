@@ -7,6 +7,11 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://chouon-training.com/en/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
     <loc>https://chouon-training.com/choon-taisaku/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

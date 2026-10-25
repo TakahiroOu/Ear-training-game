@@ -6,17 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- What search engines show in their results -->
-    <title>聴音トレーニング｜無料の聴音・音感トレーニングゲーム（Ear Training）</title>
+    <title>聴音トレーニング｜無料の聴音・音感トレーニングゲーム（Ear Training Game）</title>
     <meta
       name="description"
-      content="無料でできる聴音トレーニングゲーム。単音・2音・和音を聴いて鍵盤で答える練習、インターバル・和音の聴き分け、ランキング戦や友だちとの対戦も。音大受験の聴音対策にも。Free ear training game: notes, intervals and chords."
+      content="無料でできる聴音トレーニングゲーム。単音・2音・和音を聴いて鍵盤で答える練習、インターバル・和音の聴き分け、ランキング戦や友だちとの対戦も。音大受験の聴音対策にも。Ear Training Game: free online ear training for notes, intervals and chords."
     />
     <link rel="canonical" href="%VITE_SITE_URL%/" />
+    <!-- The English home page is /en/ -->
+    <link rel="alternate" hreflang="ja" href="%VITE_SITE_URL%/" />
+    <link rel="alternate" hreflang="en" href="%VITE_SITE_URL%/en/" />
+    <link rel="alternate" hreflang="x-default" href="%VITE_SITE_URL%/" />
     <!-- Proves to Google Search Console that this site is ours. Don't remove it. -->
     <meta name="google-site-verification" content="xl7fjlrNoePwyXOFbLjWgUYMu4P9wNirrv0ULEGFWAo" />
 
     <!-- How the link looks when shared on LINE, X, Facebook, ... -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="聴音トレーニング" />
     <meta property="og:title" content="聴音トレーニング｜無料の聴音・音感トレーニングゲーム" />
     <meta
       property="og:description"
@@ -31,7 +36,8 @@
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "聴音トレーニング (Ear Training)",
+        "name": "聴音トレーニング",
+        "alternateName": ["Ear Training Game", "Chouon Training"],
         "url": "%VITE_SITE_URL%/",
         "applicationCategory": "EducationalApplication",
         "operatingSystem": "Any (web browser)",
@@ -65,9 +71,9 @@
         <a href="/ontei-training/">音程（インターバル）トレーニング</a>
       </nav>
       <section lang="en">
-        <h2>About Ear Training</h2>
+        <h2>About Ear Training Game</h2>
         <p>
-          A free ear training game: listen to piano notes and chords and find them on the keyboard. Practice single
+          <a href="/en/">Ear Training Game</a> is a free ear training game: listen to piano notes and chords and find them on the keyboard. Practice single
           notes, intervals, triads and seventh chords, play ranked runs anytime, or compete live with friends.
         </p>
         <nav class="site-links" aria-label="Guides">

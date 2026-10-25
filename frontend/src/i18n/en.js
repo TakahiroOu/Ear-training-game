@@ -1,7 +1,8 @@
 // All English text in the app. Japanese is in ja.js with the same keys.
 export default {
   languageName: 'English',
-  title: 'EAR TRAINING',
+  title: 'EAR TRAINING GAME',
+  pageTitle: 'Ear Training Game – Free Online Ear Training for Notes, Intervals and Chords',
   rulesTitle: 'How to play',
   rules: [
     'Press a "How many notes" button (1–4 notes) to hear a question (or keys 1–4)',
@@ -263,10 +264,10 @@ export default {
     copy: 'Copy',
     copied: 'Copied!',
     copyManually: 'Copy this text:',
-    gameWon: (points) => `I reached ${points} points and won at 聴音トレーニング (Ear Training)! 🎹 #聴音トレーニング`,
-    gamePlayed: (points) => `I played 聴音トレーニング (Ear Training) and scored ${points} points! 🎹 #聴音トレーニング`,
-    ranked: (title, count, average) => `${title} (${count} questions) on 聴音トレーニング: ${average} points per question! 🎹 #聴音トレーニング`,
-    classResult: (title, score, rank) => `I scored ${score} points${rank ? ` and placed #${rank}` : ''} in "${title}" on 聴音トレーニング! 🎹 #聴音トレーニング`,
-    live: (rank, players, score) => `I placed #${rank} of ${players} (${score} points) in a live ear training battle! 🎹 #聴音トレーニング`,
+    gameWon: (points) => `I reached ${points} points and won at Ear Training Game! 🎹 #EarTraining`,
+    gamePlayed: (points) => `I played Ear Training Game and scored ${points} points! 🎹 #EarTraining`,
+    ranked: (title, count, average) => `${title} (${count} questions) on Ear Training Game: ${average} points per question! 🎹 #EarTraining`,
+    classResult: (title, score, rank) => `I scored ${score} points${rank ? ` and placed #${rank}` : ''} in "${title}" on Ear Training Game! 🎹 #EarTraining`,
+    live: (rank, players, score) => `I placed #${rank} of ${players} (${score} points) in a live ear training battle! 🎹 #EarTraining`,
   },
 }

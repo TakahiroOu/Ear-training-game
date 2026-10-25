@@ -7,6 +7,16 @@ export const LANGUAGES = { en, ja }
 const STORAGE_KEY = 'language'
 
 function initialLanguage() {
+  const fromAddress = new URLSearchParams(window.location.search).get('lang')
+  if (fromAddress in LANGUAGES) {
+    // e.g. chouon-training.com/?lang=en: use it, and remember it like pressing the language button
+    try {
+      localStorage.setItem(STORAGE_KEY, fromAddress)
+    } catch {
+      // not remembered, but used for this visit
+    }
+    return fromAddress
+  }
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved in LANGUAGES) return saved
@@ -23,6 +33,7 @@ export function useLanguage() {
   // Tell the browser (and screen readers, translators, search engines) which language the page shows
   useEffect(() => {
     document.documentElement.lang = language
+    document.title = LANGUAGES[language].pageTitle
   }, [language])
 
   function setLanguage(next) {

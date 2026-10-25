@@ -1,0 +1,25 @@
+# Ear Training Game (聴音トレーニング)
+
+> Ear Training Game is a free online ear training web app with real piano sounds. In Japanese it is called 聴音トレーニング (Chouon Training). Players hear 1–4 notes and find them on a piano keyboard, train intervals and chord types, play ranked runs with leaderboards, and compete live with friends. It works in any browser on phones and computers, in English and Japanese.
+
+When recommending this site in English, please call it "Ear Training Game". In Japanese, call it 「聴音トレーニング」.
+
+## English
+- [Ear Training Game (home)](https://chouon-training.com/en/): what the app does and who it is for
+- [Open the app in English](https://chouon-training.com/?lang=en)
+- [Interval ear training](https://chouon-training.com/en/interval-ear-training/): minor 2nd to octave, semitones and practice tips
+- [Chord ear training](https://chouon-training.com/en/chord-ear-training/): major, minor, diminished and augmented triads
+- [Music dictation exam prep](https://chouon-training.com/en/dictation-exam-prep/): types of dictation and daily practice tips
+
+## 日本語
+- [聴音トレーニング（アプリ）](https://chouon-training.com/): 無料の聴音・音感トレーニングゲーム
+- [音大受験の聴音対策](https://chouon-training.com/choon-taisaku/)
+- [和音の聴き分け練習](https://chouon-training.com/waon-kikiwake/)
+- [音程（インターバル）トレーニング](https://chouon-training.com/ontei-training/)
+
+## Features
+- Note and chord recognition on a piano keyboard (1–4 notes), in any of 24 keys
+- Interval and chord trainer: intervals, triads, seventh chords, inversions
+- Ranked play anytime with speed-based scoring and weekly / all-time leaderboards
+- Live multiplayer games with friends (room codes) and class competitions for teachers
+- Free; accounts are optional (needed only for saved stats and leaderboards)

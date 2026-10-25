@@ -6,6 +6,7 @@ import { defineConfig } from 'vite'
 // (Japanese, with English versions under en/). New pages must be added here and to public/sitemap.xml.
 const PAGES = [
   'index.html',
+  'en/index.html',
   'choon-taisaku/index.html',
   'waon-kikiwake/index.html',
   'ontei-training/index.html',
