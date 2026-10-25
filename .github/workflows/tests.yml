@@ -50,3 +50,23 @@ jobs:
       - run: npm test
       - run: npx oxlint
       - run: npm run build
+
+  deploy:
+    # After every test has passed on main, tell Render to put the new version online.
+    # The deploy hook addresses are secret: they're stored in GitHub (Settings → Secrets and variables → Actions).
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy the website
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_WEBSITE }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "RENDER_DEPLOY_HOOK_WEBSITE is not set yet: skipping"; exit 0; fi
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Render is deploying the website"
+      - name: Deploy the API
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "RENDER_DEPLOY_HOOK_API is not set yet: skipping"; exit 0; fi
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Render is deploying the API"

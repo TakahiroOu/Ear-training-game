@@ -10,7 +10,7 @@ services:
     plan: free
     region: singapore # the closest Render region to Japan
     branch: main
-    autoDeployTrigger: commit # every push to main goes online
+    autoDeployTrigger: "off" # deploys are started by GitHub Actions after the tests pass (.github/workflows/tests.yml)
     dockerContext: .
     dockerfilePath: ./backend/Dockerfile.prod
     healthCheckPath: /api/health
@@ -27,7 +27,7 @@ services:
     name: ear-training
     runtime: static
     branch: main
-    autoDeployTrigger: commit # every push to main goes online
+    autoDeployTrigger: "off" # deploys are started by GitHub Actions after the tests pass (.github/workflows/tests.yml)
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: ./frontend/dist
     envVars:
