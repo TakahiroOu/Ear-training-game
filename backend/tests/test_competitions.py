@@ -4,7 +4,7 @@ from datetime import datetime
 import pytest
 
 from app import competitions as rules
-from app.auth import CurrentUser
+from app.auth import CurrentUser, get_current_user
 from app.models import Competition, CompetitionEntry
 
 WRONG = ["C3", "C#3", "D3", "D#3", "E3"]  # never the answer (questions have at most 4 notes)
@@ -32,8 +32,8 @@ def play_question(client, db, entry_id, index, given=None):
     return client.post(f"/api/entries/{entry_id}/answers", json={"index": index, "given_notes": given})
 
 
-def play_run(client, db, competition_id, given=None, questions=10):
-    entry = client.post(f"/api/competitions/{competition_id}/entries", json={"question_count": questions}).json()
+def play_run(client, db, competition_id, given=None):
+    entry = client.post(f"/api/competitions/{competition_id}/entries").json()
     for index in range(entry["question_count"]):
         response = play_question(client, db, entry["id"], index, given)
     return response.json()["entry"]
@@ -166,7 +166,7 @@ def test_class_competition_with_join_code(named, db, login_as):
     found = named.get(f"/api/competitions/code/{code.lower()}").json()  # codes are not case-sensitive
     assert found["title"] == "3年A組" and found["join_code"] is None  # only the creator sees the code
     named.patch("/api/me", json={"username": "student2"})
-    result = play_run(named, db, found["id"], questions=99)  # class: the competition's count is used
+    result = play_run(named, db, found["id"])  # class: the competition's own number of questions
     assert result["finished"] and result["rank"] == 1 and result["question_count"] == 8
     # one attempt only
     again = named.post(f"/api/competitions/{found['id']}/entries")
@@ -185,22 +185,31 @@ def test_ended_class_competition_rejects_entries(named, db):
     assert named.post(f"/api/competitions/{competition.id}/entries").json()["detail"] == "This competition is not open"
 
 
-def test_choose_how_many_questions_and_rank_by_average(named, db, login_as):
+def test_ranked_runs_are_always_20_questions(named, db, login_as):
     competition_id = ranked_id(named, "easy")
-    short = play_run(named, db, competition_id, questions=2)
-    assert short["finished"] and short["question_count"] == 2
-    assert short["rank"] is None  # fewer than 10 questions: doesn't count for the leaderboard
-    assert named.post(f"/api/competitions/{competition_id}/entries", json={"question_count": 0}).status_code == 422
-    assert named.post(f"/api/competitions/{competition_id}/entries", json={"question_count": 101}).status_code == 422
+    # Asking for another length is ignored: everyone plays the same 20 questions
+    entry = named.post(f"/api/competitions/{competition_id}/entries", json={"question_count": 5}).json()
+    assert entry["question_count"] == 20
+    db.query(CompetitionEntry).delete()
+    db.commit()
 
-    play_run(named, db, competition_id, questions=10)  # all right
+    # An old run of another length (from before this rule) doesn't count for the leaderboard
+    old = CompetitionEntry(
+        competition_id=competition_id, user_id=named.app.dependency_overrides[get_current_user]().id,
+        seed="old", question_count=10, score=5000, finished_at=datetime(2026, 10, 20),
+    )
+    db.add(old)
+    db.commit()
+    assert named.get(f"/api/competitions/{competition_id}/leaderboard").json()["rows"] == []
+
+    play_run(named, db, competition_id)  # a normal 20-question run
     login_as(CurrentUser(id=uuid.uuid4(), email="hanako@example.com"))
     named.patch("/api/me", json={"username": "hanako"})
-    play_run(named, db, competition_id, questions=30, given=WRONG)  # longer, but all wrong
+    play_run(named, db, competition_id, given=WRONG)
 
     board = named.get(f"/api/competitions/{competition_id}/leaderboard").json()
-    assert [(r["name"], r["question_count"]) for r in board["rows"]] == [("ピアノ太郎", 10), ("hanako", 30)]
-    assert board["rows"][0]["average"] > 100 and board["rows"][1]["average"] == -50.0
+    assert [(r["name"], r["question_count"]) for r in board["rows"]] == [("ピアノ太郎", 20), ("hanako", 20)]
+    assert board["rows"][0]["score"] > 0 > board["rows"][1]["score"] == -1000
 
 
 def test_class_competition_stays_open_until_the_creator_closes_it(named, db, login_as, user):

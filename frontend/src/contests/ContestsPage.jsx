@@ -12,36 +12,6 @@ import Leaderboard from './Leaderboard.jsx'
 import UsernameForm from './UsernameForm.jsx'
 import { readyToPlay } from './readyToPlay.js'
 
-const QUICK_COUNTS = [5, 10, 20, 50]
-
-/** Ranked runs: pick how many questions (any number from 1 to 100). */
-function QuestionCountPicker({ t, value, onChange }) {
-  const tc = t.contest
-  return (
-    <div className="count-picker">
-      <span>{tc.howMany}</span>
-      {QUICK_COUNTS.map((n) => (
-        <button
-          key={n}
-          type="button"
-          className={n === value ? 'button button-active' : 'button'}
-          onClick={() => onChange(n)}
-        >
-          {n}
-        </button>
-      ))}
-      <input
-        type="number"
-        min={1}
-        max={100}
-        value={value}
-        aria-label={tc.howMany}
-        onChange={(e) => onChange(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
-      />
-    </div>
-  )
-}
-
 /** One competition in the list. */
 function ContestCard({ t, competition, loggedIn, onPlay, onLeaderboard, onClose }) {
   const tc = t.contest
@@ -49,32 +19,22 @@ function ContestCard({ t, competition, loggedIn, onPlay, onLeaderboard, onClose 
   const best = competition.my_best
   const open = competition.my_entry && !competition.my_entry.finished
   const canPlay = loggedIn && competition.active && (ranked || !best)
-  const [count, setCount] = useState(20)
   return (
     <div className="contest-card">
       <div>
         <h3>{contestTitle(t, competition)}</h3>
         <p className="muted small">
           {ranked
-            ? tc.categoryHint[competition.category]
+            ? `${tc.categoryHint[competition.category]} · ${tc.questions(competition.question_count)}`
             : `${tc.questions(competition.question_count)} · ${competition.active ? tc.open : tc.closed}`}{' '}
           · {tc.players(competition.players)}
         </p>
         {competition.join_code && competition.active && <p className="small">{tc.shareCode(competition.join_code)}</p>}
-        {best &&
-          (ranked ? (
-            <p className="win">{tc.yourBest(best.average, best.rank)}</p>
-          ) : (
-            <p className="win">{tc.yourResult(best.score, best.rank)}</p>
-          ))}
-        {ranked && canPlay && !open && <QuestionCountPicker t={t} value={count} onChange={setCount} />}
-        {ranked && canPlay && !open && count < competition.min_ranked_questions && (
-          <p className="muted small">{tc.tooShortHint(competition.min_ranked_questions)}</p>
-        )}
+        {best && <p className="win">{ranked ? tc.yourBest(best.score, best.rank) : tc.yourResult(best.score, best.rank)}</p>}
       </div>
       <div className="contest-buttons">
         {canPlay && (
-          <button type="button" className="button button-primary" onClick={() => onPlay(competition, count)}>
+          <button type="button" className="button button-primary" onClick={() => onPlay(competition)}>
             {open ? tc.continue : tc.play}
           </button>
         )}
@@ -202,10 +162,10 @@ export default function ContestsPage({ t, auth }) {
     }
   }
 
-  const play = (competition, questionCount) =>
+  const play = (competition) =>
     prepare(async () => {
-      const entry = await enterCompetition(auth.token, competition.id, questionCount)
-      setView({ name: 'play', entry, competition, questionCount })
+      const entry = await enterCompetition(auth.token, competition.id)
+      setView({ name: 'play', entry, competition })
     })
 
   async function close(competition) {
@@ -236,7 +196,7 @@ export default function ContestsPage({ t, auth }) {
         entry={view.entry}
         title={contestTitle(t, view.competition)}
         ranked={view.competition.kind === 'ranked'}
-        onPlayAgain={() => play(view.competition, view.questionCount)}
+        onPlayAgain={() => play(view.competition)}
         onLeaderboard={() => showLeaderboard(view.competition.id)}
         onBack={backToList}
       />

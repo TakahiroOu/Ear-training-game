@@ -103,13 +103,9 @@ export function roomSocketUrl(code) {
   return `${base.origin}/api/rooms/${encodeURIComponent(code)}/ws`
 }
 
-/** Ranked: start a run with `questionCount` questions (or continue an unfinished one). Class: your one attempt. */
-export function enterCompetition(token, competitionId, questionCount = 20) {
-  return request(`/api/competitions/${competitionId}/entries`, {
-    token,
-    method: 'POST',
-    body: { question_count: questionCount },
-  })
+/** Ranked: start a 20-question run (or continue an unfinished one). Class: your one attempt. */
+export function enterCompetition(token, competitionId) {
+  return request(`/api/competitions/${competitionId}/entries`, { token, method: 'POST' })
 }
 
 /** Creator only: close a class competition (its leaderboard stays visible). */
