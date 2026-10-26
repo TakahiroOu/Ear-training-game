@@ -73,8 +73,8 @@ def test_wrong_answer_costs_points_and_locks_you_out():
     host, guest = ids(room)
     room.start(host, now=0.0)
     messages = room.answer(host, 1, wrong_for(room), now=1.0)
-    assert messages[0]["type"] == "wrong" and messages[0]["points"] == -50
-    assert room.players[host].score == -50
+    assert messages[0]["type"] == "wrong" and messages[0]["points"] == -200  # 1 note: the biggest penalty
+    assert room.players[host].score == -200
     with pytest.raises(RoomError, match="already_answered"):
         room.answer(host, 1, room.notes, now=2.0)
     # the other player can still answer

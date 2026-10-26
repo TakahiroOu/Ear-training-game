@@ -62,8 +62,8 @@ def test_speed_scoring():
     assert rules.points_for("right", 1, 2000) == 88  # 1 note: same ×0.875 already after 2 s
     # wrong octave: half; wrong: minus points
     assert rules.points_for("octave", 2, 0) == 150
-    assert rules.points_for("wrong", 1, 1000) == -50
-    assert rules.points_for("wrong", 4, 1000) == -200
+    # wrong: the easier the question, the bigger the penalty
+    assert [rules.points_for("wrong", mode, 1000) for mode in [1, 2, 3, 4]] == [-200, -150, -100, -50]
 
 
 def test_week_starts_monday_midnight_japan_time():
@@ -106,8 +106,8 @@ def test_easy_run_is_all_single_notes_and_scores_speed(named, db):
     first = play_question(named, db, entry["id"], 0).json()
     assert first["result"] == "right" and 120 < first["points"] <= 150  # answered within a fraction of a second
     wrong = play_question(named, db, entry["id"], 1, given=WRONG[:1] + ["F3"]).json()
-    assert wrong["result"] == "wrong" and wrong["points"] == -50
-    assert wrong["entry"]["score"] == first["points"] - 50
+    assert wrong["result"] == "wrong" and wrong["points"] == -200
+    assert wrong["entry"]["score"] == first["points"] - 200
 
 
 def test_play_anytime_as_often_as_you_like(named, db):
@@ -209,7 +209,7 @@ def test_ranked_runs_are_always_20_questions(named, db, login_as):
 
     board = named.get(f"/api/competitions/{competition_id}/leaderboard").json()
     assert [(r["name"], r["question_count"]) for r in board["rows"]] == [("ピアノ太郎", 20), ("hanako", 20)]
-    assert board["rows"][0]["score"] > 0 > board["rows"][1]["score"] == -1000
+    assert board["rows"][0]["score"] > 0 > board["rows"][1]["score"] == -4000  # 20 wrong single notes × -200
 
 
 def test_class_competition_stays_open_until_the_creator_closes_it(named, db, login_as, user):

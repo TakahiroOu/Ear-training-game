@@ -83,8 +83,9 @@ def speed_factor(mode, ms):
 
 
 def wrong_penalty(mode):
-    """A wrong answer costs points: -50 for 1 note ... -200 for 4 notes."""
-    return -50 * mode
+    """A wrong answer costs points, more for easier questions:
+    -200 for 1 note, -150 for 2, -100 for 3, -50 for 4 (like the mistake points of the original game)."""
+    return -50 * (5 - mode)
 
 
 def points_for(result, mode, ms):
