@@ -75,7 +75,7 @@ class Competition(Base):
     """A contest.
 
     kind "ranked": always open, play as often as you like; every run gets its own seed (new questions),
-                   the leaderboard shows each player's best run.
+                   every finished run is a leaderboard row, under the name typed for it.
     kind "class":  created by a player, joined with `join_code`, one attempt each, same questions for all.
     category: "easy" (all questions 1 note) or "mixed" (1 → 4 notes). Times are stored in UTC.
     """
@@ -103,8 +103,9 @@ class CompetitionEntry(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     competition_id: Mapped[int] = mapped_column(ForeignKey("competitions.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("profiles.id", ondelete="CASCADE"), index=True)
+    player_name: Mapped[str | None] = mapped_column(String(20))  # the leaderboard name typed for this run
     seed: Mapped[str] = mapped_column(String(40))  # ranked: new for every run; class: the competition's seed
-    question_count: Mapped[int]  # ranked: chosen by the player; class: the competition's
+    question_count: Mapped[int]  # ranked: always 20; class: the competition's
     next_index: Mapped[int] = mapped_column(default=0)  # the question the player is on
     question_served_at: Mapped[datetime | None]  # when the current question's audio was first sent
     score: Mapped[int] = mapped_column(default=0)

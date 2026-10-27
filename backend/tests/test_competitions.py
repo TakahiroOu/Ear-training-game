@@ -12,9 +12,13 @@ WRONG = ["C3", "C#3", "D3", "D#3", "E3"]  # never the answer (questions have at 
 
 @pytest.fixture
 def named(client):
-    """Logged-in client that has chosen a username (needed to enter)."""
+    """Logged-in client that has chosen a username (used for runs from before run names existed)."""
     assert client.patch("/api/me", json={"username": "ピアノ太郎"}).status_code == 200
     return client
+
+
+def enter(client, competition_id, name="ピアノ太郎"):
+    return client.post(f"/api/competitions/{competition_id}/entries", json={"player_name": name})
 
 
 def ranked_id(client, category):
@@ -32,8 +36,8 @@ def play_question(client, db, entry_id, index, given=None):
     return client.post(f"/api/entries/{entry_id}/answers", json={"index": index, "given_notes": given})
 
 
-def play_run(client, db, competition_id, given=None):
-    entry = client.post(f"/api/competitions/{competition_id}/entries").json()
+def play_run(client, db, competition_id, given=None, name="ピアノ太郎"):
+    entry = enter(client, competition_id, name).json()
     for index in range(entry["question_count"]):
         response = play_question(client, db, entry["id"], index, given)
     return response.json()["entry"]
@@ -60,10 +64,9 @@ def test_speed_scoring():
     assert rules.points_for("right", 4, 0) == 600
     assert rules.points_for("right", 4, 6500) == 350  # after one half-life (6.5 s): ×0.875
     assert rules.points_for("right", 1, 2000) == 88  # 1 note: same ×0.875 already after 2 s
-    # wrong octave: half; wrong: minus points
+    # wrong octave: half; wrong: nothing (no points are taken away)
     assert rules.points_for("octave", 2, 0) == 150
-    # wrong: the easier the question, the bigger the penalty
-    assert [rules.points_for("wrong", mode, 1000) for mode in [1, 2, 3, 4]] == [-200, -150, -100, -50]
+    assert [rules.points_for("wrong", mode, 1000) for mode in [1, 2, 3, 4]] == [0, 0, 0, 0]
 
 
 def test_week_starts_monday_midnight_japan_time():
@@ -86,9 +89,15 @@ def test_listing_twice_does_not_create_duplicates(guest_client, db):
     assert db.query(Competition).count() == 2
 
 
-def test_username_is_required_and_unique(client, login_as):
+def test_a_new_run_needs_a_name_but_no_account_username(client):
     competition_id = ranked_id(client, "easy")
-    assert client.post(f"/api/competitions/{competition_id}/entries").json()["detail"] == "username_required"
+    assert client.post(f"/api/competitions/{competition_id}/entries").json()["detail"] == "name_required"
+    assert enter(client, competition_id, "   ").json()["detail"] == "name_required"
+    assert enter(client, competition_id, "x" * 21).status_code == 422  # too long
+    assert enter(client, competition_id, "たろう").status_code == 200
+
+
+def test_username_is_unique(client, login_as):  # still needed for live rooms
     assert client.patch("/api/me", json={"username": "a"}).status_code == 422  # too short
     assert client.patch("/api/me", json={"username": "taro"}).status_code == 200
     login_as(CurrentUser(id=uuid.uuid4(), email="other@example.com"))
@@ -97,7 +106,7 @@ def test_username_is_required_and_unique(client, login_as):
 
 def test_easy_run_is_all_single_notes_and_scores_speed(named, db):
     competition_id = ranked_id(named, "easy")
-    entry = named.post(f"/api/competitions/{competition_id}/entries").json()
+    entry = enter(named, competition_id).json()
     assert entry["next_mode"] == 1 and entry["question_count"] == 20  # 20 when not chosen
 
     audio = named.get(f"/api/entries/{entry['id']}/audio")
@@ -106,46 +115,48 @@ def test_easy_run_is_all_single_notes_and_scores_speed(named, db):
     first = play_question(named, db, entry["id"], 0).json()
     assert first["result"] == "right" and 120 < first["points"] <= 150  # answered within a fraction of a second
     wrong = play_question(named, db, entry["id"], 1, given=WRONG[:1] + ["F3"]).json()
-    assert wrong["result"] == "wrong" and wrong["points"] == -200
-    assert wrong["entry"]["score"] == first["points"] - 200
+    assert wrong["result"] == "wrong" and wrong["points"] == 0
+    assert wrong["entry"]["score"] == first["points"]  # nothing taken away
 
 
 def test_play_anytime_as_often_as_you_like(named, db):
     competition_id = ranked_id(named, "mixed")
     first = play_run(named, db, competition_id)
     assert first["finished"] and first["rank"] == 1
-    second = named.post(f"/api/competitions/{competition_id}/entries").json()
+    second = enter(named, competition_id).json()
     assert second["id"] != first["id"] and second["next_index"] == 0  # a new run
     # ... with new questions
     seeds = [e.seed for e in db.query(CompetitionEntry).order_by(CompetitionEntry.id)]
     assert len(set(seeds)) == 2
 
-    # a started run is continued, not replaced
+    # a started run is continued, not replaced (no name needed to continue)
     assert named.post(f"/api/competitions/{competition_id}/entries").json()["id"] == second["id"]
 
 
-def test_leaderboard_shows_each_players_best_run(named, db, login_as):
+def test_every_run_is_on_the_leaderboard_under_its_own_name(named, db, login_as):
     competition_id = ranked_id(named, "easy")
-    play_run(named, db, competition_id, given=WRONG)  # bad run: -1000
-    play_run(named, db, competition_id)  # good run
+    play_run(named, db, competition_id, given=WRONG, name="taro")  # bad run: 0
+    play_run(named, db, competition_id, name="ピアノ太郎")  # good run
+    play_run(named, db, competition_id, name="ピアノ太郎")  # the same name again is fine
 
     login_as(CurrentUser(id=uuid.uuid4(), email="hanako@example.com"))
-    named.patch("/api/me", json={"username": "hanako"})
-    play_run(named, db, competition_id, given=WRONG)
+    play_run(named, db, competition_id, given=WRONG, name="hanako")
 
     for period in ["all", "week"]:
         board = named.get(f"/api/competitions/{competition_id}/leaderboard?period={period}").json()
-        assert [(r["rank"], r["name"]) for r in board["rows"]] == [(1, "ピアノ太郎"), (2, "hanako")]
-        assert board["rows"][0]["score"] > 0 > board["rows"][1]["score"]
+        rows = board["rows"]
+        assert [r["name"] for r in rows[:2]] == ["ピアノ太郎", "ピアノ太郎"] and rows[0]["score"] > 0
+        assert sorted(r["name"] for r in rows[2:]) == ["hanako", "taro"]  # both 0 points
+        assert all(r["score"] == 0 for r in rows[2:]) and len({r["id"] for r in rows}) == 4
         assert board["me"]["name"] == "hanako" and board["me"]["is_me"] is True
     assert "@" not in str(board)  # emails are never shown
 
     mine = next(c for c in named.get("/api/competitions").json()["ranked"] if c["id"] == competition_id)
-    assert mine["my_best"]["rank"] == 2 and mine["players"] == 2
+    assert mine["my_best"]["score"] == 0 and mine["entries"] == 4
 
 
 def test_cheating_is_blocked(named, login_as):
-    entry = named.post(f"/api/competitions/{ranked_id(named, 'mixed')}/entries").json()
+    entry = enter(named, ranked_id(named, "mixed")).json()
     url = f"/api/entries/{entry['id']}/answers"
     assert named.post(url, json={"index": 0, "given_notes": ["C4"]}).json()["detail"] == "Listen to the question first"
     named.get(f"/api/entries/{entry['id']}/audio")
@@ -165,11 +176,10 @@ def test_class_competition_with_join_code(named, db, login_as):
     login_as(CurrentUser(id=uuid.uuid4(), email="student2@example.com"))
     found = named.get(f"/api/competitions/code/{code.lower()}").json()  # codes are not case-sensitive
     assert found["title"] == "3年A組" and found["join_code"] is None  # only the creator sees the code
-    named.patch("/api/me", json={"username": "student2"})
-    result = play_run(named, db, found["id"])  # class: the competition's own number of questions
+    result = play_run(named, db, found["id"], name="student2")  # class: the competition's own number of questions
     assert result["finished"] and result["rank"] == 1 and result["question_count"] == 8
     # one attempt only
-    again = named.post(f"/api/competitions/{found['id']}/entries")
+    again = enter(named, found["id"], "student2-again")
     assert again.json()["detail"] == "You have already played this competition"
     assert [c["title"] for c in named.get("/api/competitions").json()["classes"]] == ["3年A組"]
     assert named.get("/api/competitions/code/NOPE00").status_code == 404
@@ -182,13 +192,15 @@ def test_ended_class_competition_rejects_entries(named, db):
     )
     db.add(competition)
     db.commit()
-    assert named.post(f"/api/competitions/{competition.id}/entries").json()["detail"] == "This competition is not open"
+    assert enter(named, competition.id).json()["detail"] == "This competition is not open"
 
 
 def test_ranked_runs_are_always_20_questions(named, db, login_as):
     competition_id = ranked_id(named, "easy")
     # Asking for another length is ignored: everyone plays the same 20 questions
-    entry = named.post(f"/api/competitions/{competition_id}/entries", json={"question_count": 5}).json()
+    entry = named.post(
+        f"/api/competitions/{competition_id}/entries", json={"player_name": "taro", "question_count": 5}
+    ).json()
     assert entry["question_count"] == 20
     db.query(CompetitionEntry).delete()
     db.commit()
@@ -204,12 +216,11 @@ def test_ranked_runs_are_always_20_questions(named, db, login_as):
 
     play_run(named, db, competition_id)  # a normal 20-question run
     login_as(CurrentUser(id=uuid.uuid4(), email="hanako@example.com"))
-    named.patch("/api/me", json={"username": "hanako"})
-    play_run(named, db, competition_id, given=WRONG)
+    play_run(named, db, competition_id, given=WRONG, name="hanako")
 
     board = named.get(f"/api/competitions/{competition_id}/leaderboard").json()
     assert [(r["name"], r["question_count"]) for r in board["rows"]] == [("ピアノ太郎", 20), ("hanako", 20)]
-    assert board["rows"][0]["score"] > 0 > board["rows"][1]["score"] == -4000  # 20 wrong single notes × -200
+    assert board["rows"][0]["score"] > 0 == board["rows"][1]["score"]  # 20 wrong answers: 0 points
 
 
 def test_class_competition_stays_open_until_the_creator_closes_it(named, db, login_as, user):
@@ -223,7 +234,6 @@ def test_class_competition_stays_open_until_the_creator_closes_it(named, db, log
     closed = named.post(f"/api/competitions/{created['id']}/close").json()
     assert closed["active"] is False
     login_as(student)
-    named.patch("/api/me", json={"username": "student"})
-    entry = named.post(f"/api/competitions/{created['id']}/entries").json()
+    entry = enter(named, created["id"], "student").json()
     assert entry["detail"] == "This competition is not open"
     assert named.get(f"/api/competitions/{created['id']}/leaderboard").status_code == 200  # results stay visible

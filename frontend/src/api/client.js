@@ -84,7 +84,7 @@ export function findCompetitionByCode(token, code) {
   return request(`/api/competitions/code/${encodeURIComponent(code)}`, { token })
 }
 
-/** period: 'all' or 'week' (ranked competitions show each player's best run) */
+/** period: 'all' or 'week' (ranked competitions show every finished run) */
 export function fetchLeaderboard(token, competitionId, period = 'all') {
   return request(`/api/competitions/${competitionId}/leaderboard?period=${period}`, { token })
 }
@@ -104,8 +104,9 @@ export function roomSocketUrl(code) {
 }
 
 /** Ranked: start a 20-question run (or continue an unfinished one). Class: your one attempt. */
-export function enterCompetition(token, competitionId) {
-  return request(`/api/competitions/${competitionId}/entries`, { token, method: 'POST' })
+export function enterCompetition(token, competitionId, playerName) {
+  const body = playerName ? { player_name: playerName } : undefined // continuing a run needs no name
+  return request(`/api/competitions/${competitionId}/entries`, { token, method: 'POST', body })
 }
 
 /** Creator only: close a class competition (its leaderboard stays visible). */

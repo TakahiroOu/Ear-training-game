@@ -6,11 +6,11 @@ import {
   fetchCompetitions,
   findCompetitionByCode,
 } from '../api/client.js'
+import { loadSounds } from '../audio/sampler.js'
 import ContestPlay from './ContestPlay.jsx'
 import { contestTitle } from './format.js'
 import Leaderboard from './Leaderboard.jsx'
-import UsernameForm from './UsernameForm.jsx'
-import { readyToPlay } from './readyToPlay.js'
+import PlayerNameForm from './PlayerNameForm.jsx'
 
 /** One competition in the list. */
 function ContestCard({ t, competition, loggedIn, onPlay, onLeaderboard, onClose }) {
@@ -27,7 +27,7 @@ function ContestCard({ t, competition, loggedIn, onPlay, onLeaderboard, onClose 
           {ranked
             ? `${tc.categoryHint[competition.category]} · ${tc.questions(competition.question_count)}`
             : `${tc.questions(competition.question_count)} · ${competition.active ? tc.open : tc.closed}`}{' '}
-          · {tc.players(competition.players)}
+          · {tc.entries(competition.entries)}
         </p>
         {competition.join_code && competition.active && <p className="small">{tc.shareCode(competition.join_code)}</p>}
         {best && <p className="win">{ranked ? tc.yourBest(best.score, best.rank) : tc.yourResult(best.score, best.rank)}</p>}
@@ -137,7 +137,7 @@ export default function ContestsPage({ t, auth }) {
   const tc = t.contest
   const [lists, setLists] = useState(null)
   const [found, setFound] = useState(null) // a class competition found by its join code
-  const [view, setView] = useState({ name: 'list' }) // list | username | play | leaderboard
+  const [view, setView] = useState({ name: 'list' }) // list | name | play | leaderboard
   const [error, setError] = useState(null)
 
   const reload = useCallback(() => {
@@ -148,25 +148,26 @@ export default function ContestsPage({ t, auth }) {
 
   useEffect(reload, [reload])
 
-  /** Sounds need a click to start, and contests need a leaderboard name. Then `next()` runs. */
-  async function prepare(next) {
+  /** Start a run (with the name typed for it), or continue the unfinished one (playerName = null). */
+  async function start(competition, playerName = null) {
     setError(null)
     try {
-      if (!(await readyToPlay(auth.token))) {
-        setView({ name: 'username', then: next })
-        return
-      }
-      await next()
+      await loadSounds() // sounds need a click to start: this runs right after one
+      const entry = await enterCompetition(auth.token, competition.id, playerName)
+      setView({ name: 'play', entry, competition })
     } catch (e) {
       setError(e.detail === 'This competition is not open' ? tc.notOpen : t.serverError)
+      setView({ name: 'list' })
     }
   }
 
-  const play = (competition) =>
-    prepare(async () => {
-      const entry = await enterCompetition(auth.token, competition.id)
-      setView({ name: 'play', entry, competition })
-    })
+  // A new run always asks for its leaderboard name (it can be different every time)
+  const askName = (competition) => setView({ name: 'name', competition })
+  const play = (competition) => {
+    const open = competition.my_entry && !competition.my_entry.finished
+    if (open) start(competition)
+    else askName(competition)
+  }
 
   async function close(competition) {
     if (!window.confirm(tc.closeConfirm)) return
@@ -184,8 +185,16 @@ export default function ContestsPage({ t, auth }) {
   }
   const showLeaderboard = (competitionId) => setView({ name: 'leaderboard', competitionId })
 
-  if (view.name === 'username') {
-    return <UsernameForm t={t} token={auth.token} onSaved={() => prepare(view.then)} />
+  if (view.name === 'name') {
+    return (
+      <PlayerNameForm
+        t={t}
+        token={auth.token}
+        title={contestTitle(t, view.competition)}
+        onSubmit={(playerName) => start(view.competition, playerName)}
+        onBack={backToList}
+      />
+    )
   }
   if (view.name === 'play') {
     return (
@@ -196,7 +205,7 @@ export default function ContestsPage({ t, auth }) {
         entry={view.entry}
         title={contestTitle(t, view.competition)}
         ranked={view.competition.kind === 'ranked'}
-        onPlayAgain={() => play(view.competition)}
+        onPlayAgain={() => askName(view.competition)}
         onLeaderboard={() => showLeaderboard(view.competition.id)}
         onBack={backToList}
       />

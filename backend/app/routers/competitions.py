@@ -1,5 +1,8 @@
 """Ranked runs (anytime, Easy / Mixed, always 20 questions) and class competitions with a join code.
 
+Every run is played under a name typed just before it, and every finished run is its own
+leaderboard row: one person can play as often as they like, under different names.
+
 Cheating protection: the browser never receives a question's note names before answering.
 It gets a mixed audio clip (app/audio.py), the server times the answer and grades it.
 """
@@ -19,8 +22,6 @@ from app.auth import CurrentUser, get_current_user, get_optional_user
 from app.competitions import (
     ALWAYS_OPEN,
     RANKED_QUESTION_COUNT,
-    best_entries,
-    best_rank,
     ensure_ranked_competitions,
     is_active,
     new_join_code,
@@ -28,6 +29,8 @@ from app.competitions import (
     points_for,
     question,
     rank_of,
+    ranked_runs,
+    run_rank,
     utc_now,
     week_start,
 )
@@ -72,7 +75,7 @@ class CompetitionOut(BaseModel):
     title: str | None
     question_count: int
     active: bool  # class: False once the creator closed it
-    players: int
+    entries: int  # finished runs on the leaderboard
     is_mine: bool  # you created it (you can close it)
     join_code: str | None  # only shown to the person who created it
     my_entry: EntryOut | None  # a run in progress (ranked) or your attempt (class)
@@ -85,6 +88,10 @@ class ClassCompetitionIn(BaseModel):
     question_count: int = Field(default=20, ge=1, le=MAX_QUESTIONS)
 
 
+class EntryIn(BaseModel):
+    player_name: str = Field(min_length=1, max_length=20)
+
+
 class CompetitionAnswerIn(BaseModel):
     index: int
     given_notes: list[str] = Field(min_length=1, max_length=len(NOTE_NAMES))
@@ -92,13 +99,14 @@ class CompetitionAnswerIn(BaseModel):
 
 class CompetitionAnswerOut(BaseModel):
     result: str  # "right" | "octave" | "wrong"
-    points: int  # can be negative for wrong answers
+    points: int  # 0 for wrong answers
     response_ms: int
     question_notes: list[str]  # revealed only after answering
     entry: EntryOut
 
 
 class LeaderboardRow(BaseModel):
+    id: int  # the run
     rank: int
     name: str
     score: int
@@ -112,21 +120,20 @@ class LeaderboardOut(BaseModel):
     competition: CompetitionOut
     period: str
     rows: list[LeaderboardRow]
-    me: LeaderboardRow | None  # your row, also when you're not in the top 50
+    me: LeaderboardRow | None  # your best row, also when you're not in the top 50
 
 
 # ---------- helpers ----------
 
-def display_name(user_id: uuid.UUID, username: str | None):
-    """Leaderboards never show emails: a chosen username, or 'Player-xxxx'."""
-    return username or f"Player-{str(user_id)[:4]}"
+def display_name(user_id: uuid.UUID, name: str | None):
+    """Leaderboards never show emails: the name typed for the run, or 'Player-xxxx'."""
+    return name or f"Player-{str(user_id)[:4]}"
 
 
 def entry_rank(db: Session, entry: CompetitionEntry):
     if entry.finished_at is None:
         return None
-    # Ranked: where this run would place among everyone's best runs
-    return best_rank(db, entry) if entry.competition.kind == "ranked" else rank_of(db, entry)
+    return run_rank(db, entry) if entry.competition.kind == "ranked" else rank_of(db, entry)
 
 
 def current_question(entry: CompetitionEntry):
@@ -160,7 +167,7 @@ def competition_out(db: Session, competition: Competition, user: CurrentUser | N
     finished = (CompetitionEntry.competition_id == competition.id) & CompetitionEntry.finished_at.is_not(None)
     if ranked:
         finished &= CompetitionEntry.question_count == RANKED_QUESTION_COUNT
-    players = db.scalar(select(func.count(func.distinct(CompetitionEntry.user_id))).where(finished))
+    entries = db.scalar(select(func.count()).where(finished))
 
     open_entry = best = None
     if user:
@@ -177,7 +184,7 @@ def competition_out(db: Session, competition: Competition, user: CurrentUser | N
     mine = bool(user and competition.created_by == user.id)
     return CompetitionOut(
         id=competition.id, kind=competition.kind, category=competition.category, title=competition.title,
-        question_count=competition.question_count, active=is_active(competition, now), players=players,
+        question_count=competition.question_count, active=is_active(competition, now), entries=entries,
         is_mine=mine, join_code=competition.join_code if mine else None,
         my_entry=entry_out(db, open_entry) if open_entry else None, my_best=best,
     )
@@ -265,7 +272,7 @@ def find_by_join_code(
 @router.get("/competitions/{competition_id}/leaderboard", response_model=LeaderboardOut)
 def leaderboard(
     competition_id: int,
-    period: Period = Query("all", description="Ranked only: 'week' = best runs since Monday (Japan time)"),
+    period: Period = Query("all", description="Ranked only: 'week' = runs since Monday (Japan time)"),
     user: CurrentUser | None = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ):
@@ -275,7 +282,7 @@ def leaderboard(
     now = utc_now()
 
     if competition.kind == "ranked":
-        source = best_entries(competition_id, week_start(now) if period == "week" else None)
+        source = ranked_runs(competition_id, week_start(now) if period == "week" else None)
     else:
         source = (
             select(CompetitionEntry)
@@ -287,12 +294,12 @@ def leaderboard(
     ranked = (
         select(source, Profile.username, func.rank().over(order_by=order).label("rank"))
         .join(Profile, Profile.id == source.c.user_id)
-        .order_by("rank")
+        .order_by("rank", source.c.id)
     )
 
     def row(r):
         return LeaderboardRow(
-            rank=r.rank, name=display_name(r.user_id, r.username), score=r.score, question_count=r.question_count,
+            id=r.id, rank=r.rank, name=display_name(r.user_id, r.player_name or r.username), score=r.score, question_count=r.question_count,
             correct=r.correct, total_ms=r.total_ms,
             is_me=bool(user and r.user_id == user.id),
         )
@@ -301,7 +308,9 @@ def leaderboard(
     me = next((r for r in rows if r.is_me), None)
     if user and me is None:
         everyone = ranked.subquery()
-        mine = db.execute(select(everyone).where(everyone.c.user_id == user.id)).first()
+        mine = db.execute(  # your best run
+            select(everyone).where(everyone.c.user_id == user.id).order_by(everyone.c.rank)
+        ).first()
         if mine:
             me = row(mine)
     return LeaderboardOut(
@@ -312,21 +321,24 @@ def leaderboard(
 @router.post("/competitions/{competition_id}/entries", response_model=EntryOut)
 def enter(
     competition_id: int,
+    body: EntryIn | None = None,
     user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Ranked: continue your unfinished run, or start a new 20-question run with new questions.
+    """Ranked: continue your unfinished run, or start a new 20-question run with new questions,
+    under the name in the body (any name, a different one every time if you like).
     Class: start (or continue) your one attempt."""
     competition = db.get(Competition, competition_id)
     if competition is None:
         raise HTTPException(404, "Competition not found")
-    profile = get_or_create_profile(db, user)
-    if not profile.username:
-        raise HTTPException(409, "username_required")
+    get_or_create_profile(db, user)
 
     unfinished = db.scalar(my_entries(competition_id, user.id).where(CompetitionEntry.finished_at.is_(None)))
     if unfinished:
         return entry_out(db, unfinished)
+    name = body.player_name.strip() if body else ""
+    if not name:
+        raise HTTPException(422, "name_required")
     if competition.kind == "class" and db.scalar(my_entries(competition_id, user.id)):
         raise HTTPException(409, "You have already played this competition")
     if not is_active(competition, utc_now()):
@@ -334,7 +346,7 @@ def enter(
 
     ranked = competition.kind == "ranked"
     entry = CompetitionEntry(
-        competition_id=competition_id, user_id=user.id,
+        competition_id=competition_id, user_id=user.id, player_name=name,
         seed=new_seed(competition.seed) if ranked else competition.seed,
         question_count=RANKED_QUESTION_COUNT if ranked else competition.question_count,
     )

@@ -82,21 +82,15 @@ def speed_factor(mode, ms):
     return 0.25 + 1.25 * 0.5 ** (ms / half_life_ms(mode))
 
 
-def wrong_penalty(mode):
-    """A wrong answer costs points, more for easier questions:
-    -200 for 1 note, -150 for 2, -100 for 3, -50 for 4 (like the mistake points of the original game)."""
-    return -50 * (5 - mode)
-
-
 def points_for(result, mode, ms):
-    """Right: 100 × notes × speed. Wrong octave: half of that. Wrong: minus points.
+    """Right: 100 × notes × speed. Wrong octave: half of that. Wrong: 0 (no points are taken away).
     Because the base grows with the number of notes, speed matters more on harder questions."""
     base = 100 * mode * speed_factor(mode, ms)
     if result == "right":
         return round(base)
     if result == "octave":
         return round(base / 2)
-    return wrong_penalty(mode)
+    return 0
 
 
 # ---------- ranking ----------
@@ -118,7 +112,7 @@ def better_than(entry):
 
 
 def rank_of(db: Session, entry):
-    """Class competitions: one entry per player, so rank among entries."""
+    """Where a finished entry places among all finished entries of its competition."""
     if entry.finished_at is None:
         return None
     return db.scalar(select(func.count()).where(better_than(entry))) + 1
@@ -126,35 +120,32 @@ def rank_of(db: Session, entry):
 
 # Every ranked run has exactly RANKED_QUESTION_COUNT (20) questions, so everyone plays the same length
 # and runs are compared simply by score, then time. (Older runs of other lengths don't count.)
+# Every run is its own row on the leaderboard, with the name the player typed for that run:
+# one person can play as often as they like and appear several times, under different names.
 
 
 def counts_for_ranking(entry):
     return entry.finished_at is not None and entry.question_count == RANKED_QUESTION_COUNT
 
 
-def best_entries(competition_id, since=None):
-    """Ranked competitions: each player's best finished 20-question run (highest score, then fastest)."""
-    query = (
-        select(CompetitionEntry)
-        .where(
-            CompetitionEntry.competition_id == competition_id,
-            CompetitionEntry.finished_at.is_not(None),
-            CompetitionEntry.question_count == RANKED_QUESTION_COUNT,
-        )
-        .distinct(CompetitionEntry.user_id)
-        .order_by(CompetitionEntry.user_id, CompetitionEntry.score.desc(), CompetitionEntry.total_ms)
+def ranked_runs(competition_id, since=None):
+    """Ranked competitions: every finished 20-question run."""
+    query = select(CompetitionEntry).where(
+        CompetitionEntry.competition_id == competition_id,
+        CompetitionEntry.finished_at.is_not(None),
+        CompetitionEntry.question_count == RANKED_QUESTION_COUNT,
     )
     if since is not None:
         query = query.where(CompetitionEntry.finished_at >= since)
     return query.subquery()
 
 
-def best_rank(db: Session, entry, since=None):
-    """Where a run places among everyone's best runs (None if it doesn't count)."""
+def run_rank(db: Session, entry, since=None):
+    """Where a run places among all ranked runs (None if it doesn't count)."""
     if not counts_for_ranking(entry):
         return None
-    best = best_entries(entry.competition_id, since)
-    better = select(func.count()).select_from(best).where(
-        or_(best.c.score > entry.score, and_(best.c.score == entry.score, best.c.total_ms < entry.total_ms))
+    runs = ranked_runs(entry.competition_id, since)
+    better = select(func.count()).select_from(runs).where(
+        or_(runs.c.score > entry.score, and_(runs.c.score == entry.score, runs.c.total_ms < entry.total_ms))
     )
     return db.scalar(better) + 1

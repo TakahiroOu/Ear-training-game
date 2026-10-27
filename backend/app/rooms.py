@@ -2,7 +2,7 @@
 
 Everyone hears the same question at the same moment. The first right answers score
 (1 scorer with 2-3 players, half the players with 4 or more), faster answers score more.
-A wrong answer costs points and locks you out of that question; the others keep trying.
+A wrong answer scores nothing and locks you out of that question; the others keep trying.
 The game ends when someone reaches the target score.
 
 This file has no networking: every method gets the current time and returns the messages
@@ -15,7 +15,7 @@ import secrets
 from dataclasses import dataclass
 
 from app import audio
-from app.competitions import new_join_code, points_for, wrong_penalty
+from app.competitions import new_join_code, points_for
 from app.music import make_question
 from app.scoring import classify
 
@@ -185,9 +185,8 @@ class Room:
             if len(self.scorers) >= scorers_allowed(len(self.connected_players())):
                 return messages + self.reveal(now)
         else:
-            # Wrong: minus points. Wrong octave: locked out, but no minus points.
-            points = wrong_penalty(self.mode) if result == "wrong" else 0
-            player.score += points
+            # Wrong (or wrong octave): no points, and no more tries at this question
+            points = 0
             messages = [{"type": "wrong", "player": player_id, "points": points, "octave": result == "octave"}]
         messages.append(self.snapshot())
         if self.everyone_answered():

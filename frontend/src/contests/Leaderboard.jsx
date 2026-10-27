@@ -19,7 +19,7 @@ export default function Leaderboard({ t, token, competitionId, onBack }) {
 
   const ranked = board.competition.kind === 'ranked'
   const row = (r) => (
-    <tr key={`${r.rank}-${r.name}`} className={r.is_me ? 'row-me' : ''}>
+    <tr key={r.id} className={r.is_me ? 'row-me' : ''}>
       <td>{r.rank}</td>
       <td>{r.name}</td>
       <td>{r.score}</td>
@@ -35,7 +35,7 @@ export default function Leaderboard({ t, token, competitionId, onBack }) {
       </button>
       <h2>{contestTitle(t, board.competition)}</h2>
       <p className="muted">
-        {tc.players(board.competition.players)}
+        {tc.entries(board.competition.entries)}
         {!ranked && ` · ${board.competition.active ? tc.open : tc.closed}`}
       </p>
       {ranked && <p className="muted small">{tc.rankedRule}</p>}
@@ -61,7 +61,7 @@ export default function Leaderboard({ t, token, competitionId, onBack }) {
             <tr>
               <th>{tc.rank}</th>
               <th>{tc.name}</th>
-              <th>{ranked ? tc.bestScoreCol : tc.scoreCol}</th>
+              <th>{tc.scoreCol}</th>
               <th>{tc.correctCol}</th>
               <th>{tc.time}</th>
             </tr>

@@ -68,13 +68,13 @@ def test_first_right_answer_scores_and_ends_the_question():
     assert room.players[guest].score == 113
 
 
-def test_wrong_answer_costs_points_and_locks_you_out():
+def test_wrong_answer_scores_nothing_and_locks_you_out():
     room = make_room()
     host, guest = ids(room)
     room.start(host, now=0.0)
     messages = room.answer(host, 1, wrong_for(room), now=1.0)
-    assert messages[0]["type"] == "wrong" and messages[0]["points"] == -200  # 1 note: the biggest penalty
-    assert room.players[host].score == -200
+    assert messages[0]["type"] == "wrong" and messages[0]["points"] == 0  # no points taken away
+    assert room.players[host].score == 0
     with pytest.raises(RoomError, match="already_answered"):
         room.answer(host, 1, room.notes, now=2.0)
     # the other player can still answer
