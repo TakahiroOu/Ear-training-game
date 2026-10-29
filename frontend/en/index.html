@@ -6,6 +6,8 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#1e1e1e" />
     <title>Free Ear Training Game – Compete Worldwide and With Friends</title>
     <meta
       name="description"
@@ -41,64 +43,53 @@
     </script>
   </head>
   <body>
-    <main class="guide">
-      <header class="guide-header">
-        <a href="/en/">Ear Training Game</a>
-        <a href="/" lang="ja">日本語</a>
-      </header>
+    <!-- The game itself, in English (the language comes from the /en/ address) -->
+    <div id="root"></div>
 
-      <h1>Ear Training Game: free online ear training</h1>
-      <p class="lead">
-        Train your ear with real piano sounds, right in your browser. Listen to one to four notes and find them on the
-        keyboard, learn to recognize intervals and chords, and see how you compare with other players. It's free, works
-        on phones and computers, and needs no download.
-      </p>
-
-      <p><a class="button button-primary mini-cta" href="/?lang=en">▶ Start ear training (free)</a></p>
-
-      <h2>Try it right here</h2>
-      <div class="mini-trainer-slot" data-kind="interval" data-lang="en"></div>
-
-      <h2>What you can practice</h2>
-      <ul>
-        <li>
-          <strong>Note and chord recognition:</strong> hear 1, 2, 3 or 4 notes and find each one on the piano. Choose a key
-          to practice only its notes and chords. A right note in the wrong octave counts as half right.
-        </li>
-        <li>
-          <strong>Interval and chord trainer:</strong> minor 2nd to octave, major / minor / diminished / augmented triads,
-          seventh chords and inversions, played together or one by one.
-        </li>
-        <li>
-          <strong>Ranked play, anytime:</strong> 20 questions, the same for everyone; answer fast for more points and climb the
-          weekly and all-time leaderboards.
-        </li>
-        <li>
-          <strong>Live games with friends:</strong> everyone hears the same question at the same moment; the fastest right
-          answers score.
-        </li>
-        <li><strong>Class competitions:</strong> teachers can create a contest and share a join code with students.</li>
-      </ul>
-
-      <h2>Who it's for</h2>
-      <p>
-        Music students preparing for dictation and aural skills exams, instrumentalists and singers who want better
-        relative pitch, and anyone who wants to play songs by ear or hear harmony more clearly.
-      </p>
-
-      <h2>Guides</h2>
-      <nav class="site-links">
+    <!-- Written into the page itself (not built by JavaScript), so search engines always read it -->
+    <footer class="site-about" lang="en">
+      <section>
+        <h1>Ear Training Game: free online ear training</h1>
+        <p>
+          Train your ear with real piano sounds, right in your browser. Listen to one to four notes and find them on the
+          keyboard, learn to recognize intervals and chords, and compete with players worldwide or with your friends.
+          It's free, works on phones and computers, and needs no download.
+        </p>
+        <h2>What you can practice</h2>
+        <ul>
+          <li>
+            <strong>Note and chord recognition:</strong> hear 1, 2, 3 or 4 notes and find each one on the piano. Choose a
+            key to practice only its notes and chords. A right note in the wrong octave counts as half right.
+          </li>
+          <li>
+            <strong>Interval and chord trainer:</strong> minor 2nd to octave, major / minor / diminished / augmented
+            triads, seventh chords and inversions, played together or one by one.
+          </li>
+          <li>
+            <strong>Ranked play, anytime:</strong> 20 questions, the same for everyone; answer fast for more points and
+            climb the weekly and all-time worldwide leaderboards.
+          </li>
+          <li>
+            <strong>Live games with friends:</strong> everyone hears the same question at the same moment; the fastest
+            right answers score.
+          </li>
+          <li><strong>Class competitions:</strong> teachers can create a contest and share a join code with students.</li>
+        </ul>
+        <h2>Who it's for</h2>
+        <p>
+          Music students preparing for dictation and aural skills exams, instrumentalists and singers who want better
+          relative pitch, and anyone who wants to play songs by ear or hear harmony more clearly.
+        </p>
+      </section>
+      <nav class="site-links" aria-label="Guides">
         <a href="/en/interval-ear-training/">Interval ear training</a>
         <a href="/en/chord-ear-training/">Chord ear training</a>
         <a href="/en/dictation-exam-prep/">Music dictation exam prep</a>
+        <a href="/en/perfect-pitch-training/">Perfect pitch training</a>
       </nav>
+      <p>Ear Training Game is also available in Japanese as <a href="/" lang="ja">聴音トレーニング</a>.</p>
+    </footer>
 
-      <p><a class="button button-primary mini-cta" href="/?lang=en">Open Ear Training Game (free)</a></p>
-
-      <footer class="guide-footer">
-        Ear Training Game is also available in Japanese as <a href="/" lang="ja">聴音トレーニング</a>.
-      </footer>
-    </main>
-    <script type="module" src="/src/landing/landing.jsx"></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

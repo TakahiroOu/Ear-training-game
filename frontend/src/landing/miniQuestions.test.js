@@ -18,5 +18,9 @@ test('every question uses existing piano samples and matches its answer', () => 
 
     const degree = QUESTION_MAKERS.degree()
     assert.equal(index(degree.notes[0]) - index('C4'), MINI_DEGREES[degree.answer])
+
+    const pitch = QUESTION_MAKERS.pitch()
+    assert.equal(pitch.notes.length, 1)
+    assert.equal(index(pitch.notes[0]) - index('C4'), MINI_DEGREES[pitch.answer])
   }
 })

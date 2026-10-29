@@ -17,6 +17,8 @@ function initialLanguage() {
     }
     return fromAddress
   }
+  // The English home page (chouon-training.com/en/) always starts in English
+  if (window.location.pathname.startsWith('/en/')) return 'en'
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved in LANGUAGES) return saved

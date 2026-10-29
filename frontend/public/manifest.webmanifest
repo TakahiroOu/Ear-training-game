@@ -1,0 +1,13 @@
+{
+  "name": "Ear Training Game｜聴音トレーニング",
+  "short_name": "Ear Training",
+  "description": "Free ear training game: hear piano notes and chords and find them on the keyboard.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e1e1e",
+  "theme_color": "#1e1e1e",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

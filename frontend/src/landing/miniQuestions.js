@@ -32,9 +32,21 @@ export function degreeQuestion(random = Math.random) {
   return { kind: 'degree', answer, reference: 'C4', notes: [note(C4 + MINI_DEGREES[answer])] }
 }
 
-export const QUESTION_MAKERS = { interval: intervalQuestion, chord: chordQuestion, degree: degreeQuestion }
+// ---------- pitch: one white key, no reference note, name it (perfect / absolute pitch) ----------
+export function pitchQuestion(random = Math.random) {
+  const answer = pick(Object.keys(MINI_DEGREES), random)
+  return { kind: 'pitch', answer, notes: [note(C4 + MINI_DEGREES[answer])] }
+}
+
+export const QUESTION_MAKERS = {
+  interval: intervalQuestion,
+  chord: chordQuestion,
+  degree: degreeQuestion,
+  pitch: pitchQuestion,
+}
 export const CHOICES = {
   interval: Object.keys(MINI_INTERVALS),
   chord: Object.keys(MINI_CHORDS),
   degree: Object.keys(MINI_DEGREES),
+  pitch: Object.keys(MINI_DEGREES),
 }

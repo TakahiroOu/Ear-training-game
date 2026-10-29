@@ -2,7 +2,7 @@
 export default {
   languageName: 'English',
   title: 'EAR TRAINING GAME',
-  pageTitle: 'Ear Training Game – Free Online Ear Training for Notes, Intervals and Chords',
+  pageTitle: 'Free Ear Training Game – Compete Worldwide and With Friends',
   rulesTitle: 'How to play',
   rules: [
     'Press a "How many notes" button (1–4 notes) to hear a question (or keys 1–4)',

@@ -2,7 +2,7 @@
 export default {
   languageName: '日本語',
   title: '聴音トレーニング',
-  pageTitle: '聴音トレーニング｜無料の聴音・音感トレーニングゲーム（Ear Training Game）',
+  pageTitle: '聴音トレーニング｜無料の聴音ゲーム・世界や友だちと対戦も',
   rulesTitle: '遊び方',
   rules: [
     '「聞く音の数」のボタン（1音〜4音）を押すと、問題の音が鳴ります（キーボードの 1〜4 でもOK）',

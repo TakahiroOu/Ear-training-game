@@ -10,9 +10,12 @@ const PAGES = [
   'choon-taisaku/index.html',
   'waon-kikiwake/index.html',
   'ontei-training/index.html',
+  'onkan-training/index.html',
+  'zettai-onkan/index.html',
   'en/dictation-exam-prep/index.html',
   'en/chord-ear-training/index.html',
   'en/interval-ear-training/index.html',
+  'en/perfect-pitch-training/index.html',
 ]
 
 // https://vite.dev/config/

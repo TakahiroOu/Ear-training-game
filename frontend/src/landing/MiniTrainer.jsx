@@ -78,7 +78,7 @@ export default function MiniTrainer({ kind, lang }) {
         </p>
       )}
       <p>
-        <a className="button button-primary mini-cta" href={lang === 'en' ? '/?lang=en' : '/'}>
+        <a className="button button-primary mini-cta" href={lang === 'en' ? '/en/' : '/'}>
           {t.openApp}
         </a>
       </p>
