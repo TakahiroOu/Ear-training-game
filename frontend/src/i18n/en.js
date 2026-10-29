@@ -80,6 +80,35 @@ export default {
   noStats: 'No saved games yet. Play a game while logged in!',
   statsError: 'Could not load your stats. Please try again later.',
 
+  // first screen
+  home: {
+    headline: 'Train your ear. Compete with the world.',
+    subline: 'Hear real piano notes and chords, find them on the keyboard, and see how fast you are. Free, right in your browser.',
+    playNow: '▶ Play now (free)',
+    cards: {
+      ranked: {
+        title: 'Ranked play',
+        text: '20 questions, the same for everyone. The faster you answer, the more points. Climb the worldwide leaderboard.',
+        go: 'See the leaderboard',
+      },
+      friends: {
+        title: 'Live battle with friends',
+        text: 'Share a room code. Everyone hears the same question at once; the fastest right answer scores.',
+        go: 'Make a room',
+      },
+      play: {
+        title: 'Practice: notes and chords',
+        text: '1 to 4 notes at once. Find them on the piano, choose a key, reach 50 points to win. No sign-up.',
+        go: 'Start',
+      },
+      trainer: {
+        title: 'Interval and chord trainer',
+        text: 'Minor 2nd to octave, triads, seventh chords and inversions. Set it up your way.',
+        go: 'Open the trainer',
+      },
+    },
+  },
+
   // contests
   contestsNav: 'Contests',
   friendsNav: 'Play with friends',

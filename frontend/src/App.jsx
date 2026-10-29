@@ -93,7 +93,7 @@ function App() {
       </Suspense>
 
       {page === 'play' && game.screen === 'rules' && (
-        <RulesScreen t={t} loading={game.loading} error={game.error} onStart={game.start} />
+        <RulesScreen t={t} loading={game.loading} error={game.error} onStart={game.start} onOpen={setPage} />
       )}
 
       {page === 'play' && game.screen === 'playing' && (
