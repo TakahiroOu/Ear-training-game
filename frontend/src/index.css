@@ -819,6 +819,39 @@ kbd {
   margin: 12px 0 0;
 }
 
+/* ---------- play-data analysis ---------- */
+
+.analytics .stat-tiles {
+  margin: 12px 0 8px;
+}
+
+.analytics-highlight {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bar-fill-worst {
+  background: var(--red);
+}
+
+/* Same column widths on every row, so the bars line up; the numbers go under the bar on phones */
+.analytics .bar-row {
+  grid-template-columns: 9em 1fr 14em;
+}
+
+@media (max-width: 700px) {
+  .analytics .bar-row {
+    grid-template-columns: 6.5em 1fr;
+    row-gap: 0;
+  }
+
+  .analytics .bar-value {
+    grid-column: 2;
+    font-size: 0.8rem;
+  }
+}
+
 /* Right / wrong answer buttons. At the end of the file and with :hover included,
    so the colors win over the normal and hover button styles above. */
 .button.button-correct,

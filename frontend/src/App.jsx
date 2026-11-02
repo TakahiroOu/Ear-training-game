@@ -12,6 +12,7 @@ import { LANGUAGES, useLanguage } from './i18n/index.js'
 
 // Pages other than Play are downloaded only when first opened, so the site starts faster
 const AccountPage = lazy(() => import('./components/AccountPage.jsx'))
+const AnalyticsPage = lazy(() => import('./analytics/AnalyticsPage.jsx'))
 const StatsPage = lazy(() => import('./components/StatsPage.jsx'))
 const ContestsPage = lazy(() => import('./contests/ContestsPage.jsx'))
 const FriendsPage = lazy(() => import('./friends/FriendsPage.jsx'))
@@ -21,7 +22,7 @@ function App() {
   const auth = useAuth()
   const game = useGame({ token: auth.token, userId: auth.user?.id ?? null })
   const { t, language, setLanguage } = useLanguage()
-  const [page, setPage] = useState('play') // 'play' | 'trainer' | 'contests' | 'friends' | 'stats' | 'account'
+  const [page, setPage] = useState('play') // 'play' | 'trainer' | 'contests' | 'friends' | 'analytics' | 'stats' | 'account'
 
   // Keyboard shortcuts, same as the pygame version: 1-4, Enter, Space.
   useEffect(() => {
@@ -68,6 +69,7 @@ function App() {
           {navButton('trainer', t.trainerNav)}
           {navButton('contests', t.contestsNav)}
           {navButton('friends', t.friendsNav)}
+          {navButton('analytics', t.analyticsNav)}
           {auth.user && navButton('stats', t.stats)}
           {auth.enabled && navButton('account', auth.user ? t.account : t.logIn)}
           <span className="nav-divider" />
@@ -90,6 +92,7 @@ function App() {
         {page === 'trainer' && <TrainerPage t={t} auth={auth} />}
         {page === 'contests' && <ContestsPage t={t} auth={auth} />}
         {page === 'friends' && <FriendsPage t={t} auth={auth} />}
+        {page === 'analytics' && <AnalyticsPage t={t} auth={auth} />}
       </Suspense>
 
       {page === 'play' && game.screen === 'rules' && (

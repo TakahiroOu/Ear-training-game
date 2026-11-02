@@ -89,6 +89,13 @@ export function fetchLeaderboard(token, competitionId, period = 'all') {
   return request(`/api/competitions/${competitionId}/leaderboard?period=${period}`, { token })
 }
 
+// ---------- analysis ----------
+
+/** Most-missed notes, intervals and chords. scope: 'everyone' or 'me' (logged in) */
+export function fetchAnalytics(token, scope = 'everyone') {
+  return request(`/api/analytics?scope=${scope}`, { token })
+}
+
 // ---------- live rooms ----------
 
 /** Create a live room. Returns { code }. */

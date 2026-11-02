@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.music import make_question, parse_key
-from app.routers import competitions, me, rooms, sessions, trainer
+from app.routers import analytics, competitions, me, rooms, sessions, trainer
 
 app = FastAPI(title="Ear Training API")
 if config.FRONTEND_ORIGINS:
@@ -19,6 +19,7 @@ app.include_router(me.router)
 app.include_router(trainer.router)
 app.include_router(competitions.router)
 app.include_router(rooms.router)
+app.include_router(analytics.router)
 
 
 @app.get("/api/health")

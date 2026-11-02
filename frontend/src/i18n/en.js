@@ -109,6 +109,36 @@ export default {
     },
   },
 
+  // play-data analysis
+  analyticsNav: 'Insights',
+  analytics: {
+    title: 'What do players miss most?',
+    intro: 'Analysis of every answer saved in Play mode and contests: which intervals, chords and notes are hardest, and what people hear instead.',
+    scopes: { everyone: 'Everyone', me: 'Only me' },
+    basedOn: (answers, players) =>
+      `Based on ${answers} answers from ${players === 1 ? '1 player' : `${players} players`}.`,
+    basedOnMe: (answers) => `Based on your ${answers} answers.`,
+    noData: 'No answers saved yet. Play while logged in and yours will count!',
+    noDataMe: 'You have no saved answers yet. Play while logged in to see your own analysis.',
+    hardestInterval: 'Most missed interval',
+    hardestChord: 'Most missed chord',
+    hardestNote: 'Most missed note',
+    accuracyOf: (pct, answers) => `${pct}% right (${answers} answers)`,
+    intervals: 'Intervals (2-note questions)',
+    intervalsHint: 'Wide intervals are folded into one octave: a 10th counts as a 3rd.',
+    chords: 'Chords (3–4-note questions)',
+    notes: 'Single notes (1-note questions)',
+    confusions: 'Notes most often heard as another note',
+    confusionsHint: '1-note questions answered with a different note name (wrong octaves are not counted).',
+    played: 'Played',
+    answered: 'Answered',
+    times: 'Times',
+    byMode: 'By number of notes',
+    count: (n) => (n === 1 ? '1 answer' : `${n} answers`),
+    median: (s) => `median ${s} s`,
+    footnote: `The red bar is the lowest accuracy among results with at least 3 answers. Bars show the share of fully right answers.`,
+  },
+
   // contests
   contestsNav: 'Contests',
   friendsNav: 'Play with friends',
