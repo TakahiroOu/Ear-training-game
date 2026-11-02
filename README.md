@@ -1,18 +1,63 @@
-# Ear Training Game
+# Ear Training Game（聴音トレーニング）
 
-A music ear-training game: listen to one or more notes, then pick them on the piano keyboard.
+**Live: [chouon-training.com](https://chouon-training.com)** · English: [chouon-training.com/en/](https://chouon-training.com/en/)
 
-## About the game
+A free ear-training web game with real piano sounds: hear 1–4 notes, find them on the keyboard, and compete with
+players worldwide or live with friends. In English and Japanese, on phones and computers.
 
-This ear training game is designed for instrument learners, singers, and composers to practice music dictation, an essential musical skill, in a casual and accessible way.
+![First screen: play now, ranked play, live battles with friends, practice and the interval & chord trainer](docs/images/home.png)
 
-Players can freely choose to hear 1, 2, 3, or 4 piano notes and answer by clicking the on-screen keyboard. Points or mistake points are awarded depending on the selected difficulty level.
+| Playing: the answer is shown on the piano | Insights: what players miss most |
+|---|---|
+| ![A 3-note question after checking: right keys green, wrong keys red, missed keys yellow](docs/images/play.png) | ![Accuracy by interval, chord type and note, computed with SQL from every saved answer](docs/images/insights.png) |
 
-The game ends when a player reaches 50 points (win) or 50 mistake points (lose).
+## Features
 
-See the full roadmap and the reasons behind each technology in [docs/PLAN.md](docs/PLAN.md).
+- **Play**: hear 1, 2, 3 or 4 notes (single notes, intervals, triads, seventh chords) and pick them on the piano.
+  Choose a key (24 keys) to practice only its notes and chords. A right note in the wrong octave counts as half right.
+- **Trainer**: name intervals (minor 2nd to octave), triads, seventh chords and inversions.
+- **Ranked play, anytime**: 20 questions, the same length for everyone. Speed scoring: points shrink every split second.
+  Weekly and all-time leaderboards; each run is played under the name you type for it.
+- **Live battles with friends** (WebSockets): everyone hears the same question at once; the fastest right answers score.
+- **Class competitions**: a teacher creates a contest and shares a join code.
+- **Insights**: which intervals, chords and notes players miss most, and what they hear instead (see below).
+- Accounts are optional (Supabase Auth); guests can practice without signing up.
 
-## Run the web app (in development)
+## Play-data analysis
+
+The **Insights** page ([chouon-training.com/en/](https://chouon-training.com/en/) → Insights) answers questions such as
+*"Which interval is missed most often?"*, *"Which chord type takes longest to recognize?"* and *"Which note do players
+hear when the answer is A?"*. Logged-in players can switch between everyone's data and their own.
+
+Everything is computed in **PostgreSQL** from every saved answer, Play mode and contests together
+([backend/app/analytics.py](backend/app/analytics.py), served by `GET /api/analytics?scope=everyone|me`):
+
+| Question | How it is computed |
+|---|---|
+| Accuracy and answer time per number of notes | `GROUP BY mode`, `avg(result = 'right')`, median with `percentile_cont(0.5) WITHIN GROUP` |
+| Hardest single notes | note letter → pitch class with a `VALUES` lookup table, accuracy and wrong-octave rate per pitch class |
+| Hardest intervals (2-note questions) | note names → numbers (`unnest` + `LATERAL` join), span = max − min, folded into one octave |
+| Hardest chord types (3–4 notes) | every played note is tried as the root; the pitch-class shape (`array_agg(DISTINCT … ORDER BY …)`) is matched against a table of chord types, so inversions and spread voicings are recognized |
+| Most common confusions | 1-note questions answered with a different note name, counted per (played, answered) pair |
+
+The two answer tables (Play and contests) are combined with `UNION ALL` in one shared set of CTEs, and the queries
+are covered by tests with hand-made data ([backend/tests/test_analytics.py](backend/tests/test_analytics.py)).
+Everyone's data is shown only as totals, never who answered what.
+
+## Tech stack
+
+| Part | Technology |
+|---|---|
+| Frontend | React 19, JavaScript, Vite, Tone.js (Web Audio) for the piano samples |
+| Backend | Python, FastAPI, SQLAlchemy 2, Alembic migrations, WebSockets for live rooms, NumPy for mixing contest audio on the server (so the browser never sees the answer) |
+| Database & auth | PostgreSQL on Supabase, Supabase Auth (JWT) |
+| Hosting | Render (static website + Docker API), Cloudflare DNS |
+| CI/CD | GitHub Actions: backend tests against a real PostgreSQL, frontend tests, lint and build, then deploy |
+| Local development | Docker Compose (frontend, backend, database, test database) |
+
+The full roadmap and the reasons behind each technology are in [docs/PLAN.md](docs/PLAN.md).
+
+## Run it locally
 
 Needs Docker Desktop running.
 
@@ -44,44 +89,40 @@ Without setup, everyone plays as a guest. To turn on accounts and saved progress
 1. Copy `.env.example` to `.env` and fill in the values from your Supabase project
    (the comments in the file say where to find each one). `.env` is never committed.
 2. Restart: `docker compose up -d --force-recreate`
-3. Create the tables in Supabase: `docker compose exec backend alembic upgrade head`
+3. Create the tables: `docker compose exec backend alembic upgrade head`
 
 When a table changes later, a new file is added in `backend/alembic/versions/`, and step 3 applies it.
 
 ## Online (Render + Supabase)
 
-- `render.yaml` describes the two online services: the website (free static site) and the API
-  (free Docker web service in Singapore, built from `backend/Dockerfile.prod`).
-- Every push to `main` is deployed automatically. The API runs the database migrations when it starts.
-- Secrets (database password etc.) are typed into Render's dashboard only, never into the code.
-- GitHub runs all tests on every push (`.github/workflows/tests.yml`).
+- `render.yaml` describes the two online services: the website (static site) and the API
+  (Docker web service in Singapore, built from `backend/Dockerfile.prod`).
+- Every push to `main` runs all tests on GitHub (`.github/workflows/tests.yml`); when they pass, GitHub Actions
+  tells Render to deploy. The API runs the database migrations when it starts.
+- Secrets (database password, deploy hooks) live only in Render's dashboard and GitHub secrets, never in the code.
 
 ## Tests
 
 ```
-docker compose exec backend pytest     # Python: music logic, API, saving games, login checks (uses a throwaway test database)
-cd frontend && npm test                # JavaScript: game rules
+docker compose exec backend pytest     # Python: music logic, API, scoring, contests, live rooms, analysis (throwaway test database)
+cd frontend && npm test                # JavaScript: game rules, guide-page quizzes
 ```
 
 ## Project layout
 
 | Folder | What's inside |
 |---|---|
-| `frontend/` | React app (JavaScript, built with Vite) |
-| `backend/` | Python API (FastAPI) and its tests |
+| `frontend/` | React app (JavaScript, built with Vite) and the guide pages for search engines |
+| `backend/` | Python API (FastAPI), migrations and tests |
 | `scripts/` | Helper scripts, e.g. `convert_sounds.py` (WAV → MP3 for the web) |
 | `sounds/` | Original WAV piano samples |
 | `legacy/` | The original pygame version of the game |
-| `docs/` | Project plan |
+| `docs/` | Project plan, exam syllabus draft, README screenshots |
 
-## Run the original pygame version
+## The original pygame version
 
-1. Install Python (3.9 or later)
-2. Install pygame:
-   `pip install pygame`
-3. Download or clone this repository:
-   `git clone https://github.com/TakahiroOu/Ear-training-game.git`
-4. Move into the folder:
-   `cd Ear-training-game`
-5. Run the game:
-   `python legacy/main.py`
+The project started as a desktop game in Python/pygame, kept in `legacy/`:
+
+1. Install Python (3.9 or later) and pygame: `pip install pygame`
+2. Clone this repository: `git clone https://github.com/TakahiroOu/Ear-training-game.git`
+3. Run it from the repository folder: `python legacy/main.py`
