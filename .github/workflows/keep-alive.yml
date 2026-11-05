@@ -23,5 +23,5 @@ jobs:
       - name: Restore paused Supabase projects
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REFS: vnaiernisqutovohyirg kskkgkzqjxkfmmunifhr # production, development
+          SUPABASE_PROJECT_REFS: vnaiernisqutovohyirg # production (the token gets HTTP 403 on the development project)
         run: python3 scripts/supabase_watchdog.py
