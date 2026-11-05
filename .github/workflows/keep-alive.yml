@@ -27,8 +27,7 @@ jobs:
         env:
           KEY: sb_publishable_gkkmbyHeN6XVsEFaW6eVUw_ttlSaNgB
         run: |
-          curl -sS --max-time 60 -o /dev/null -w "HTTP %{http_code}
-"             -H "apikey: $KEY" -H "Content-Type: application/json"             -d '{"email":"keep-alive@example.com","password":"not-a-real-password"}'             "https://kskkgkzqjxkfmmunifhr.supabase.co/auth/v1/token?grant_type=password" || echo "not reachable"
+          curl -sS --max-time 60 -o /dev/null -w "HTTP %{http_code}" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{"email":"keep-alive@example.com","password":"not-a-real-password"}' "https://kskkgkzqjxkfmmunifhr.supabase.co/auth/v1/token?grant_type=password" || echo "not reachable"
 
   watchdog:
     runs-on: ubuntu-latest
