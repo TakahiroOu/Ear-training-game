@@ -103,6 +103,7 @@ When a table changes later, a new file is added in `backend/alembic/versions/`, 
 - Every 3 hours `.github/workflows/keep-alive.yml` reads the production database and runs
   `scripts/supabase_watchdog.py`, which restores paused Supabase projects. It needs a Supabase personal access token
   in the GitHub secret `SUPABASE_ACCESS_TOKEN`; if the token expires, the run fails and GitHub sends an email.
+  The same workflow makes the development project read its database so it stays awake (it can't restore that one).
 
 ## Tests
 

@@ -2,6 +2,7 @@
 # on the real site. Every 3 hours this:
 #   ping:     asks the API for the contest list, which reads the production database
 #   watchdog: restores any paused project (scripts/supabase_watchdog.py)
+#   dev-ping: keeps the development project awake (the watchdog's token can't access it)
 name: keep-alive
 
 on:
@@ -15,6 +16,19 @@ jobs:
     steps:
       - name: Read from the production database through the API
         run: curl -fsS --max-time 120 https://ear-training-api.onrender.com/api/competitions > /dev/null && echo "database reached"
+
+  dev-ping:
+    runs-on: ubuntu-latest
+    steps:
+      # A login attempt with a made-up account makes the project look in its database. The expected answer
+      # is "wrong password". The key is the public one, the same kind every website visitor receives.
+      # Never fails the run: nothing here can fix a paused project, so there's nothing to report.
+      - name: Make the development project read its database
+        env:
+          KEY: sb_publishable_gkkmbyHeN6XVsEFaW6eVUw_ttlSaNgB
+        run: |
+          curl -sS --max-time 60 -o /dev/null -w "HTTP %{http_code}
+"             -H "apikey: $KEY" -H "Content-Type: application/json"             -d '{"email":"keep-alive@example.com","password":"not-a-real-password"}'             "https://kskkgkzqjxkfmmunifhr.supabase.co/auth/v1/token?grant_type=password" || echo "not reachable"
 
   watchdog:
     runs-on: ubuntu-latest
