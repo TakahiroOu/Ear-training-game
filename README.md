@@ -100,6 +100,9 @@ When a table changes later, a new file is added in `backend/alembic/versions/`, 
 - Every push to `main` runs all tests on GitHub (`.github/workflows/tests.yml`); when they pass, GitHub Actions
   tells Render to deploy. The API runs the database migrations when it starts.
 - Secrets (database password, deploy hooks) live only in Render's dashboard and GitHub secrets, never in the code.
+- Every 3 hours `.github/workflows/keep-alive.yml` reads the production database and runs
+  `scripts/supabase_watchdog.py`, which restores paused Supabase projects. It needs a Supabase personal access token
+  in the GitHub secret `SUPABASE_ACCESS_TOKEN`; if the token expires, the run fails and GitHub sends an email.
 
 ## Tests
 
