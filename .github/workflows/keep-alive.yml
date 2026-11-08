@@ -1,6 +1,7 @@
 # Free Supabase projects pause after 7 days without activity, which would stop logins and contests
 # on the real site. Every 3 hours this:
-#   ping:     asks the API for the contest list, which reads the production database
+#   ping:     asks the API for the contest list, which reads the production database;
+#             if the API is stuck, restarts it on Render (same deploy hook as tests.yml)
 #   watchdog: restores any paused project (scripts/supabase_watchdog.py)
 #   dev-ping: keeps the development project awake (the watchdog's token can't access it)
 name: keep-alive
@@ -14,8 +15,22 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Read from the production database through the API
-        run: curl -fsS --max-time 120 https://ear-training-api.onrender.com/api/competitions > /dev/null && echo "database reached"
+      # Never fails the run (no email): a restart is the fix, and it happens here automatically.
+      - name: Read from the production database through the API, restart the API if it is stuck
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+        run: |
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 90 https://ear-training-api.onrender.com/api/competitions > /dev/null; then
+              echo "database reached"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "The API did not answer 3 times: asking Render to restart it"
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST "$HOOK" > /dev/null && echo "restart requested" || echo "the restart request failed"
+          fi
 
   dev-ping:
     runs-on: ubuntu-latest
