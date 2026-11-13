@@ -102,7 +102,8 @@ When a table changes later, a new file is added in `backend/alembic/versions/`, 
 - Secrets (database password, deploy hooks) live only in Render's dashboard and GitHub secrets, never in the code.
 - Every 3 hours `.github/workflows/keep-alive.yml` reads the production database and runs
   `scripts/supabase_watchdog.py`, which restores paused Supabase projects. It needs a Supabase personal access token
-  in the GitHub secret `SUPABASE_ACCESS_TOKEN`; if the token expires, the run fails and GitHub sends an email.
+  in the GitHub secret `SUPABASE_ACCESS_TOKEN`. It never fails the run (no emails); problems it can't fix,
+  such as an expired token, appear only as a WARNING in the run's log.
   The same workflow makes the development project read its database so it stays awake (it can't restore that one).
 
 ## Tests

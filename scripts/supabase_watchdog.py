@@ -4,8 +4,8 @@ Runs on GitHub (.github/workflows/keep-alive.yml), using only Python's standard 
   SUPABASE_ACCESS_TOKEN   personal access token, stored as a GitHub secret (never in the code)
   SUPABASE_PROJECT_REFS   the projects to watch, separated by spaces
 
-Exits with an error when something needs a person (for example an expired token),
-so that GitHub sends an email about the failed run.
+Never fails the run, so GitHub never sends an email: problems it can't fix itself (for example an expired
+token) are only written as a WARNING in the run's log.
 """
 
 import json
@@ -83,7 +83,9 @@ def main():
         except ApiError as error:  # e.g. 401: the token expired or was deleted
             print(f"{ref}: could not check: {error}")
             healthy = False
-    return 0 if healthy else 1
+    if not healthy:
+        print("WARNING: something above needs a person (see the lines before this one)")
+    return 0
 
 
 if __name__ == "__main__":
